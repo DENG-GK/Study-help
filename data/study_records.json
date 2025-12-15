@@ -1,0 +1,13 @@
+{
+  "records": {
+    "2025-12-15": {
+      "total_time": 109,
+      "completed_tasks": 4,
+      "pomodoros": 4,
+      "subjects": {
+        "其他": 9,
+        "电机学实验": 100
+      }
+    }
+  }
+}

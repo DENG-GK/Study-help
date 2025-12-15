@@ -1,0 +1,28 @@
+# Python 虚拟环境
+venv/
+
+# 缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# 打包文件
+build/
+dist/
+*.spec
+*.exe
+*.zip
+
+# 数据文件（可选保留）
+# data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
