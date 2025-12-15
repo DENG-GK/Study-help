@@ -55,19 +55,16 @@ class RecordModel:
         Args:
             minutes: 专注时间（分钟）
             subject: 科目名称
-            add_pomodoro: 是否增加番茄计数（实时记录时为False）
+            add_pomodoro: 是否增加番茄计数
         """
         records = RecordModel.load_records()
         today = RecordModel._ensure_today_record(records)
 
-        # 更新总时间
         records["records"][today]["total_time"] += minutes
 
-        # 只有完成整个番茄钟时才增加番茄数
         if add_pomodoro:
             records["records"][today]["pomodoros"] += 1
 
-        # 更新科目时间
         if "subjects" not in records["records"][today]:
             records["records"][today]["subjects"] = {}
 
@@ -87,7 +84,7 @@ class RecordModel:
 
     @staticmethod
     def remove_completed_task():
-        """减少完成任务数（取消完成时调用）"""
+        """减少完成任务数"""
         records = RecordModel.load_records()
         today = BaseModel.get_today_str()
         if today in records["records"]:
@@ -144,3 +141,96 @@ class RecordModel:
                 })
 
         return history
+
+    @staticmethod
+    def get_week_stats():
+        """获取本周统计
+
+        Returns:
+            本周统计数据字典
+        """
+        records = RecordModel.load_records()
+        today = datetime.now()
+        # 获取本周一
+        monday = today - timedelta(days=today.weekday())
+
+        total_time = 0
+        total_tasks = 0
+        total_pomodoros = 0
+        subjects = {}
+        daily_data = []
+
+        for i in range(7):
+            date = (monday + timedelta(days=i)).strftime("%Y-%m-%d")
+            if date in records["records"]:
+                record = records["records"][date]
+                day_time = record.get("total_time", 0)
+                total_time += day_time
+                total_tasks += record.get("completed_tasks", 0)
+                total_pomodoros += record.get("pomodoros", 0)
+
+                for subj, mins in record.get("subjects", {}).items():
+                    subjects[subj] = subjects.get(subj, 0) + mins
+
+                daily_data.append({"date": date, "total_time": day_time})
+            else:
+                daily_data.append({"date": date, "total_time": 0})
+
+        return {
+            "total_time": total_time,
+            "total_tasks": total_tasks,
+            "total_pomodoros": total_pomodoros,
+            "subjects": subjects,
+            "daily_data": daily_data,
+            "avg_time": total_time / 7 if total_time > 0 else 0
+        }
+
+    @staticmethod
+    def get_month_stats():
+        """获取本月统计
+
+        Returns:
+            本月统计数据字典
+        """
+        records = RecordModel.load_records()
+        today = datetime.now()
+        # 获取本月第一天
+        first_day = today.replace(day=1)
+
+        total_time = 0
+        total_tasks = 0
+        total_pomodoros = 0
+        subjects = {}
+        daily_data = []
+        days_in_month = 0
+
+        current = first_day
+        while current.month == today.month and current <= today:
+            date = current.strftime("%Y-%m-%d")
+            days_in_month += 1
+
+            if date in records["records"]:
+                record = records["records"][date]
+                day_time = record.get("total_time", 0)
+                total_time += day_time
+                total_tasks += record.get("completed_tasks", 0)
+                total_pomodoros += record.get("pomodoros", 0)
+
+                for subj, mins in record.get("subjects", {}).items():
+                    subjects[subj] = subjects.get(subj, 0) + mins
+
+                daily_data.append({"date": date, "total_time": day_time})
+            else:
+                daily_data.append({"date": date, "total_time": 0})
+
+            current += timedelta(days=1)
+
+        return {
+            "total_time": total_time,
+            "total_tasks": total_tasks,
+            "total_pomodoros": total_pomodoros,
+            "subjects": subjects,
+            "daily_data": daily_data,
+            "avg_time": total_time / days_in_month if days_in_month > 0 else 0,
+            "days_count": days_in_month
+        }

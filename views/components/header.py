@@ -4,22 +4,24 @@
 
 import customtkinter as ctk
 from datetime import datetime
-from config import COLORS
+from config import COLORS, theme_manager
 
 
 class HeaderComponent(ctk.CTkFrame):
     """顶部标题栏组件"""
 
-    def __init__(self, parent, on_opacity_change=None, **kwargs):
+    def __init__(self, parent, on_opacity_change=None, on_theme_toggle=None, **kwargs):
         """初始化标题栏组件
 
         Args:
             parent: 父容器
             on_opacity_change: 透明度变化回调函数
+            on_theme_toggle: 主题切换回调函数
         """
         super().__init__(parent, fg_color=COLORS["bg_card"], corner_radius=0, **kwargs)
 
         self._on_opacity_change = on_opacity_change
+        self._on_theme_toggle = on_theme_toggle
         self._drag_data = {"x": 0, "y": 0}
 
         self._create_widgets()
@@ -44,6 +46,19 @@ class HeaderComponent(ctk.CTkFrame):
             text_color=COLORS["text_secondary"]
         )
         self.date_label.pack(side="right", padx=15, pady=10)
+
+        # 主题切换按钮
+        theme_icon = "🌙" if theme_manager.is_dark else "☀️"
+        self.theme_btn = ctk.CTkButton(
+            self,
+            text=theme_icon,
+            width=32,
+            height=28,
+            fg_color=COLORS["bg_input"],
+            hover_color=COLORS["accent_purple"],
+            command=self._toggle_theme
+        )
+        self.theme_btn.pack(side="right", padx=5, pady=10)
 
         # 透明度调节
         self.opacity_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -83,11 +98,10 @@ class HeaderComponent(ctk.CTkFrame):
 
     def _bind_events(self):
         """绑定事件"""
-        # 绑定拖动事件
-        self.bind('<Button-1>', self._start_move)
-        self.bind('<B1-Motion>', self._on_move)
-        self.title_label.bind('<Button-1>', self._start_move)
-        self.title_label.bind('<B1-Motion>', self._on_move)
+        self.bind("<Button-1>", self._start_move)
+        self.bind("<B1-Motion>", self._on_move)
+        self.title_label.bind("<Button-1>", self._start_move)
+        self.title_label.bind("<B1-Motion>", self._on_move)
 
     def _start_move(self, event):
         """开始拖动"""
@@ -108,3 +122,22 @@ class HeaderComponent(ctk.CTkFrame):
 
         if self._on_opacity_change:
             self._on_opacity_change(value)
+
+    def _toggle_theme(self):
+        """切换主题"""
+        new_theme = theme_manager.toggle_theme()
+
+        # 更新按钮图标
+        theme_icon = "🌙" if new_theme == "dark" else "☀️"
+        self.theme_btn.configure(text=theme_icon)
+
+        # 更新 customtkinter 的外观模式
+        ctk.set_appearance_mode(new_theme)
+
+        if self._on_theme_toggle:
+            self._on_theme_toggle(new_theme)
+
+    def update_theme_button(self):
+        """更新主题按钮图标"""
+        theme_icon = "🌙" if theme_manager.is_dark else "☀️"
+        self.theme_btn.configure(text=theme_icon)

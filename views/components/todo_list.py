@@ -12,16 +12,18 @@ from models import TodoModel, RecordModel, BaseModel
 class TodoList(ctk.CTkFrame):
     """待办事项列表组件"""
 
-    def __init__(self, parent, on_stats_update=None, **kwargs):
+    def __init__(self, parent, on_stats_update=None, on_reminder_click=None, **kwargs):
         """初始化待办列表
 
         Args:
             parent: 父容器
             on_stats_update: 统计更新回调
+            on_reminder_click: 提醒按钮点击回调，接收 todo 参数
         """
         super().__init__(parent, fg_color=COLORS["bg_card"], corner_radius=10, **kwargs)
 
         self._on_stats_update = on_stats_update
+        self._on_reminder_click = on_reminder_click
         self._create_widgets()
         self.load_todos()
 
@@ -91,6 +93,7 @@ class TodoList(ctk.CTkFrame):
             todo: 待办事项数据
         """
         is_completed = todo.get("completed", False)
+        has_reminder = bool(todo.get("reminder_time"))
 
         # 完成的待办整条变蓝色
         if is_completed:
@@ -141,6 +144,31 @@ class TodoList(ctk.CTkFrame):
         )
         del_btn.pack(side="right", padx=5, pady=5)
 
+        # 提醒按钮（未完成的任务才显示）
+        if not is_completed:
+            reminder_icon = "🔔" if has_reminder else "⏰"
+            reminder_color = COLORS["accent_yellow"] if has_reminder else "transparent"
+            reminder_btn = ctk.CTkButton(
+                frame,
+                text=reminder_icon,
+                width=25,
+                height=25,
+                fg_color=reminder_color,
+                hover_color=COLORS["accent_yellow"],
+                text_color=text_color if not has_reminder else "#000000",
+                command=lambda t=todo: self._on_reminder_btn_click(t)
+            )
+            reminder_btn.pack(side="right", padx=2, pady=5)
+
+    def _on_reminder_btn_click(self, todo):
+        """提醒按钮点击处理
+
+        Args:
+            todo: 待办事项数据
+        """
+        if self._on_reminder_click:
+            self._on_reminder_click(todo)
+
     def show_add_dialog(self):
         """显示添加任务对话框"""
         dialog = ctk.CTkInputDialog(
@@ -167,7 +195,8 @@ class TodoList(ctk.CTkFrame):
             "text": text,
             "completed": False,
             "date": date,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
+            "reminder_time": None
         }
         data["todos"].append(new_todo)
         TodoModel.save_todos(data)
