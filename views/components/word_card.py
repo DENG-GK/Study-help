@@ -3,7 +3,7 @@
 """
 
 import customtkinter as ctk
-from config import COLORS
+from config import get_colors, theme_manager
 from controllers import WordController
 from utils import play_word_sound
 
@@ -36,21 +36,27 @@ class WordCard(ctk.CTkFrame):
         self._create_widgets()
         self.controller.load_today_words()
 
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
+
     def _create_widgets(self):
         """创建控件"""
-        # ===== 顶部标题和进度 =====
-        word_header = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
-        word_header.pack(fill="x", padx=5, pady=5)
+        colors = get_colors()
 
-        header_top = ctk.CTkFrame(word_header, fg_color="transparent")
+        # ===== 顶部标题和进度 =====
+        self.word_header = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
+        self.word_header.pack(fill="x", padx=5, pady=5)
+
+        header_top = ctk.CTkFrame(self.word_header, fg_color="transparent")
         header_top.pack(fill="x", padx=15, pady=(10, 5))
 
-        ctk.CTkLabel(
+        self.word_title_label = ctk.CTkLabel(
             header_top,
             text="📖 英语单词",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["accent_purple"]
-        ).pack(side="left")
+            text_color=colors["accent_purple"]
+        )
+        self.word_title_label.pack(side="left")
 
         # 学习模式切换
         self.mode_frame = ctk.CTkFrame(header_top, fg_color="transparent")
@@ -59,8 +65,9 @@ class WordCard(ctk.CTkFrame):
         self.card_mode_btn = ctk.CTkButton(
             self.mode_frame, text="卡片", width=45, height=24,
             font=ctk.CTkFont(size=10),
-            fg_color=COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
+            text_color="#ffffff",
             command=lambda: self._switch_mode("card")
         )
         self.card_mode_btn.pack(side="left", padx=2)
@@ -68,8 +75,9 @@ class WordCard(ctk.CTkFrame):
         self.choice_mode_btn = ctk.CTkButton(
             self.mode_frame, text="选择", width=45, height=24,
             font=ctk.CTkFont(size=10),
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=lambda: self._switch_mode("choice")
         )
         self.choice_mode_btn.pack(side="left", padx=2)
@@ -77,26 +85,27 @@ class WordCard(ctk.CTkFrame):
         self.spell_mode_btn = ctk.CTkButton(
             self.mode_frame, text="拼写", width=45, height=24,
             font=ctk.CTkFont(size=10),
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=lambda: self._switch_mode("spell")
         )
         self.spell_mode_btn.pack(side="left", padx=2)
 
         # 今日进度
-        progress_frame = ctk.CTkFrame(word_header, fg_color="transparent")
+        progress_frame = ctk.CTkFrame(self.word_header, fg_color="transparent")
         progress_frame.pack(fill="x", padx=15, pady=(0, 10))
 
         self.word_progress_label = ctk.CTkLabel(
             progress_frame,
             text="今日: 新学 0/30  复习 0/50",
             font=ctk.CTkFont(size=11),
-            text_color=COLORS["text_secondary"]
+            text_color=colors["text_secondary"]
         )
         self.word_progress_label.pack(side="left")
 
         # ===== 单词卡片区域 =====
-        self.word_card_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
+        self.word_card_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
         self.word_card_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
         # 单词显示
@@ -104,7 +113,7 @@ class WordCard(ctk.CTkFrame):
             self.word_card_frame,
             text="abandon",
             font=ctk.CTkFont(size=36, weight="bold"),
-            text_color=COLORS["text_primary"]
+            text_color=colors["text_primary"]
         )
         self.word_display.pack(pady=(40, 5))
 
@@ -116,7 +125,7 @@ class WordCard(ctk.CTkFrame):
             phonetic_frame,
             text="/əˈbændən/",
             font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_secondary"]
+            text_color=colors["text_secondary"]
         )
         self.phonetic_label.pack(side="left", padx=5)
 
@@ -126,20 +135,20 @@ class WordCard(ctk.CTkFrame):
             width=30,
             height=25,
             fg_color="transparent",
-            hover_color=COLORS["bg_input"],
+            hover_color=colors["bg_input"],
             command=self._play_sound
         )
         self.sound_btn.pack(side="left", padx=5)
 
         # 释义区域
-        self.meaning_frame = ctk.CTkFrame(self.word_card_frame, fg_color=COLORS["bg_input"], corner_radius=10)
+        self.meaning_frame = ctk.CTkFrame(self.word_card_frame, fg_color=colors["bg_input"], corner_radius=10)
         self.meaning_frame.pack(fill="x", padx=20, pady=15)
 
         self.meaning_label = ctk.CTkLabel(
             self.meaning_frame,
             text="点击卡片显示释义",
             font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_secondary"],
+            text_color=colors["text_secondary"],
             wraplength=400
         )
         self.meaning_label.pack(pady=15, padx=15)
@@ -152,7 +161,7 @@ class WordCard(ctk.CTkFrame):
             self.example_frame,
             text="",
             font=ctk.CTkFont(size=11),
-            text_color=COLORS["text_secondary"],
+            text_color=colors["text_secondary"],
             wraplength=420
         )
         self.example_label.pack(pady=5)
@@ -163,7 +172,7 @@ class WordCard(ctk.CTkFrame):
         self.meaning_frame.bind('<Button-1>', self._flip_card)
 
         # ===== 操作按钮区域 =====
-        self.word_action_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
+        self.word_action_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
         self.word_action_frame.pack(fill="x", padx=5, pady=5)
 
         # 卡片模式按钮
@@ -175,7 +184,7 @@ class WordCard(ctk.CTkFrame):
             text="❌ 不认识",
             width=100,
             height=35,
-            fg_color=COLORS["accent_red"],
+            fg_color=colors["accent_red"],
             hover_color="#da3633",
             command=lambda: self.controller.answer_word("wrong")
         )
@@ -186,7 +195,7 @@ class WordCard(ctk.CTkFrame):
             text="😐 模糊",
             width=100,
             height=35,
-            fg_color=COLORS["accent_yellow"],
+            fg_color=colors["accent_yellow"],
             hover_color="#b08800",
             text_color="#000000",
             command=lambda: self.controller.answer_word("fuzzy")
@@ -198,7 +207,7 @@ class WordCard(ctk.CTkFrame):
             text="✅ 认识",
             width=100,
             height=35,
-            fg_color=COLORS["accent_green"],
+            fg_color=colors["accent_green"],
             hover_color="#2ea043",
             command=lambda: self.controller.answer_word("correct")
         )
@@ -214,8 +223,8 @@ class WordCard(ctk.CTkFrame):
                 text=f"选项 {i+1}",
                 width=200,
                 height=35,
-                fg_color=COLORS["bg_input"],
-                hover_color=COLORS["accent_blue"],
+                fg_color=colors["bg_input"],
+                hover_color=colors["accent_blue"],
                 anchor="w",
                 command=lambda idx=i: self._select_choice(idx)
             )
@@ -233,8 +242,8 @@ class WordCard(ctk.CTkFrame):
             placeholder_text="输入单词拼写...",
             height=40,
             font=ctk.CTkFont(size=16),
-            fg_color=COLORS["bg_input"],
-            border_color=COLORS["border"]
+            fg_color=colors["bg_input"],
+            border_color=colors["border"]
         )
         self.spell_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.spell_entry.bind('<Return>', self._check_spelling)
@@ -244,8 +253,8 @@ class WordCard(ctk.CTkFrame):
             text="确认",
             width=80,
             height=40,
-            fg_color=COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
             command=self._check_spelling
         )
         self.spell_submit_btn.pack(side="right")
@@ -254,22 +263,23 @@ class WordCard(ctk.CTkFrame):
             self.spell_frame,
             text="",
             font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_secondary"]
+            text_color=colors["text_secondary"]
         )
         self.spell_result_label.pack(pady=5)
 
         # ===== 底部功能按钮 =====
-        word_bottom = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
-        word_bottom.pack(fill="x", padx=5, pady=5)
+        self.word_bottom = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
+        self.word_bottom.pack(fill="x", padx=5, pady=5)
 
-        bottom_btns = ctk.CTkFrame(word_bottom, fg_color="transparent")
+        bottom_btns = ctk.CTkFrame(self.word_bottom, fg_color="transparent")
         bottom_btns.pack(fill="x", padx=10, pady=8)
 
         self.star_btn = ctk.CTkButton(
             bottom_btns, text="⭐ 收藏", width=70, height=28,
             font=ctk.CTkFont(size=11),
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["accent_yellow"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["accent_yellow"],
+            text_color=colors["text_primary"],
             command=self._toggle_star
         )
         self.star_btn.pack(side="left", expand=True, padx=3)
@@ -277,8 +287,9 @@ class WordCard(ctk.CTkFrame):
         self.wordbook_btn = ctk.CTkButton(
             bottom_btns, text="📚 词库", width=70, height=28,
             font=ctk.CTkFont(size=11),
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=self._on_wordbook_click
         )
         self.wordbook_btn.pack(side="left", expand=True, padx=3)
@@ -286,8 +297,9 @@ class WordCard(ctk.CTkFrame):
         self.word_stats_btn = ctk.CTkButton(
             bottom_btns, text="📊 统计", width=70, height=28,
             font=ctk.CTkFont(size=11),
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=self._on_stats_click
         )
         self.word_stats_btn.pack(side="left", expand=True, padx=3)
@@ -295,8 +307,9 @@ class WordCard(ctk.CTkFrame):
         self.word_settings_btn = ctk.CTkButton(
             bottom_btns, text="⚙ 设置", width=70, height=28,
             font=ctk.CTkFont(size=11),
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=self._on_settings_click
         )
         self.word_settings_btn.pack(side="left", expand=True, padx=3)
@@ -307,15 +320,16 @@ class WordCard(ctk.CTkFrame):
         Args:
             mode: 学习模式
         """
+        colors = get_colors()
         self.controller.switch_mode(mode)
 
         # 更新按钮样式
         modes = {"card": self.card_mode_btn, "choice": self.choice_mode_btn, "spell": self.spell_mode_btn}
         for m, btn in modes.items():
             if m == mode:
-                btn.configure(fg_color=COLORS["accent_blue"])
+                btn.configure(fg_color=colors["accent_blue"], text_color="#ffffff")
             else:
-                btn.configure(fg_color=COLORS["bg_input"])
+                btn.configure(fg_color=colors["bg_input"], text_color=colors["text_primary"])
 
         # 隐藏所有模式的按钮框架
         self.card_buttons_frame.pack_forget()
@@ -352,14 +366,15 @@ class WordCard(ctk.CTkFrame):
         Args:
             idx: 选项索引
         """
+        colors = get_colors()
         is_correct = self.controller.select_choice(idx)
 
         # 显示正确/错误反馈
         for i in range(4):
             if i == self.controller.correct_choice_idx:
-                self.choice_btns[i].configure(fg_color=COLORS["accent_green"])
+                self.choice_btns[i].configure(fg_color=colors["accent_green"])
             elif i == idx and not is_correct:
-                self.choice_btns[i].configure(fg_color=COLORS["accent_red"])
+                self.choice_btns[i].configure(fg_color=colors["accent_red"])
 
         # 延迟后显示下一个单词
         self.after(800, self._next_word_after_choice)
@@ -371,18 +386,19 @@ class WordCard(ctk.CTkFrame):
 
     def _check_spelling(self, event=None):
         """检查拼写"""
+        colors = get_colors()
         user_input = self.spell_entry.get()
         is_correct, correct_word = self.controller.check_spelling(user_input)
 
         if is_correct:
             self.spell_result_label.configure(
                 text="✅ 正确！",
-                text_color=COLORS["accent_green"]
+                text_color=colors["accent_green"]
             )
         else:
             self.spell_result_label.configure(
                 text=f"❌ 错误！正确答案: {correct_word}",
-                text_color=COLORS["accent_red"]
+                text_color=colors["accent_red"]
             )
 
         # 显示正确单词
@@ -399,6 +415,7 @@ class WordCard(ctk.CTkFrame):
 
     def _update_word_display(self):
         """更新单词显示"""
+        colors = get_colors()
         word = self.controller.current_word
         mode = self.controller.mode
 
@@ -416,7 +433,7 @@ class WordCard(ctk.CTkFrame):
             if self.controller.card_flipped:
                 self.meaning_label.configure(
                     text=word.get("meaning", ""),
-                    text_color=COLORS["text_primary"]
+                    text_color=colors["text_primary"]
                 )
                 example = word.get("example", "")
                 example_cn = word.get("example_cn", "")
@@ -427,7 +444,7 @@ class WordCard(ctk.CTkFrame):
             else:
                 self.meaning_label.configure(
                     text="点击卡片显示释义",
-                    text_color=COLORS["text_secondary"]
+                    text_color=colors["text_secondary"]
                 )
                 self.example_label.configure(text="")
 
@@ -436,7 +453,7 @@ class WordCard(ctk.CTkFrame):
             self.phonetic_label.configure(text=word.get("phonetic", ""))
             self.meaning_label.configure(
                 text="请选择正确的释义",
-                text_color=COLORS["text_secondary"]
+                text_color=colors["text_secondary"]
             )
             self.example_label.configure(text="")
 
@@ -445,7 +462,7 @@ class WordCard(ctk.CTkFrame):
             self.phonetic_label.configure(text="")
             self.meaning_label.configure(
                 text=word.get("meaning", ""),
-                text_color=COLORS["text_primary"]
+                text_color=colors["text_primary"]
             )
             example_cn = word.get("example_cn", "")
             if example_cn:
@@ -455,9 +472,9 @@ class WordCard(ctk.CTkFrame):
 
         # 更新收藏按钮状态
         if word.get("starred", False):
-            self.star_btn.configure(text="⭐ 已收藏", fg_color=COLORS["accent_yellow"], text_color="#000000")
+            self.star_btn.configure(text="⭐ 已收藏", fg_color=colors["accent_yellow"], text_color="#000000")
         else:
-            self.star_btn.configure(text="⭐ 收藏", fg_color=COLORS["bg_input"], text_color=COLORS["text_primary"])
+            self.star_btn.configure(text="⭐ 收藏", fg_color=colors["bg_input"], text_color=colors["text_primary"])
 
     def _update_progress_display(self):
         """更新进度显示"""
@@ -465,14 +482,84 @@ class WordCard(ctk.CTkFrame):
 
     def _update_choices(self):
         """更新选择题选项"""
+        colors = get_colors()
         choices = self.controller.generate_choices()
         for i, (idx, meaning, is_correct) in enumerate(choices):
             self.choice_btns[i].configure(
                 text=f"{chr(65+i)}. {meaning}",
-                fg_color=COLORS["bg_input"],
-                text_color=COLORS["text_primary"]
+                fg_color=colors["bg_input"],
+                text_color=colors["text_primary"]
             )
 
     def reload_words(self):
         """重新加载单词"""
         self.controller.load_today_words()
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        self._apply_theme()
+
+    def _apply_theme(self):
+        """应用当前主题颜色"""
+        colors = get_colors()
+
+        # 更新顶部标题区域
+        self.word_header.configure(fg_color=colors["bg_card"])
+        self.word_title_label.configure(text_color=colors["accent_purple"])
+        self.word_progress_label.configure(text_color=colors["text_secondary"])
+
+        # 更新模式切换按钮
+        current_mode = self.controller.mode
+        modes = {"card": self.card_mode_btn, "choice": self.choice_mode_btn, "spell": self.spell_mode_btn}
+        for m, btn in modes.items():
+            if m == current_mode:
+                btn.configure(fg_color=colors["accent_blue"], hover_color=colors["accent_purple"], text_color="#ffffff")
+            else:
+                btn.configure(fg_color=colors["bg_input"], hover_color=colors["border"], text_color=colors["text_primary"])
+
+        # 更新单词卡片区域
+        self.word_card_frame.configure(fg_color=colors["bg_card"])
+        self.word_display.configure(text_color=colors["text_primary"])
+        self.phonetic_label.configure(text_color=colors["text_secondary"])
+        self.sound_btn.configure(hover_color=colors["bg_input"])
+        self.meaning_frame.configure(fg_color=colors["bg_input"])
+        self.example_label.configure(text_color=colors["text_secondary"])
+
+        # 更新操作按钮区域
+        self.word_action_frame.configure(fg_color=colors["bg_card"])
+        self.dont_know_btn.configure(fg_color=colors["accent_red"])
+        self.fuzzy_btn.configure(fg_color=colors["accent_yellow"])
+        self.know_btn.configure(fg_color=colors["accent_green"])
+
+        # 更新选择题按钮
+        for btn in self.choice_btns:
+            btn.configure(
+                fg_color=colors["bg_input"],
+                hover_color=colors["accent_blue"],
+                text_color=colors["text_primary"]
+            )
+
+        # 更新拼写输入区域
+        self.spell_entry.configure(
+            fg_color=colors["bg_input"],
+            border_color=colors["border"]
+        )
+        self.spell_submit_btn.configure(
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"]
+        )
+        self.spell_result_label.configure(text_color=colors["text_secondary"])
+
+        # 更新底部按钮
+        self.word_bottom.configure(fg_color=colors["bg_card"])
+        self.wordbook_btn.configure(fg_color=colors["bg_input"], hover_color=colors["border"], text_color=colors["text_primary"])
+        self.word_stats_btn.configure(fg_color=colors["bg_input"], hover_color=colors["border"], text_color=colors["text_primary"])
+        self.word_settings_btn.configure(fg_color=colors["bg_input"], hover_color=colors["border"], text_color=colors["text_primary"])
+
+        # 重新更新单词显示以应用新颜色
+        self._update_word_display()
+
+    def destroy(self):
+        """销毁组件时注销回调"""
+        theme_manager.unregister_callback(self._on_theme_change)
+        super().destroy()

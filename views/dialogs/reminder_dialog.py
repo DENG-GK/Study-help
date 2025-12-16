@@ -4,7 +4,7 @@
 
 import customtkinter as ctk
 from datetime import datetime, timedelta
-from config import COLORS
+from config import get_colors, theme_manager
 from controllers.reminder_controller import ReminderController
 
 
@@ -26,173 +26,213 @@ class ReminderDialog(ctk.CTkToplevel):
         self.reminder_controller = reminder_controller
         self._on_close = on_close
 
+        colors = get_colors()
         self.title("⏰ 设置提醒")
-        self.geometry("320x400")
+        self.geometry("340x520")
         self.transient(parent)
         self.grab_set()
-        self.configure(fg_color=COLORS["bg_dark"])
-        self.geometry(f"+{parent.winfo_x() + 50}+{parent.winfo_y() + 100}")
+        self.configure(fg_color=colors["bg_dark"])
+        self.geometry(f"+{parent.winfo_x() + 50}+{parent.winfo_y() + 50}")
 
         self._create_widgets()
 
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
+
     def _create_widgets(self):
         """创建控件"""
-        # 标题
-        title_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=0)
-        title_frame.pack(fill="x")
+        colors = get_colors()
 
-        ctk.CTkLabel(
-            title_frame,
+        # 标题
+        self.title_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=0)
+        self.title_frame.pack(fill="x")
+
+        self.title_label = ctk.CTkLabel(
+            self.title_frame,
             text="⏰ 设置提醒",
             font=ctk.CTkFont(size=16, weight="bold"),
-            text_color=COLORS["accent_blue"]
-        ).pack(padx=15, pady=10)
+            text_color=colors["accent_blue"]
+        )
+        self.title_label.pack(padx=15, pady=10)
 
         # 任务名称
-        task_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
-        task_frame.pack(fill="x", padx=10, pady=10)
+        self.task_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
+        self.task_frame.pack(fill="x", padx=10, pady=10)
 
-        ctk.CTkLabel(
-            task_frame,
+        self.task_title_label = ctk.CTkLabel(
+            self.task_frame,
             text="任务：",
             font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"]
-        ).pack(anchor="w", padx=15, pady=(10, 0))
+            text_color=colors["text_secondary"]
+        )
+        self.task_title_label.pack(anchor="w", padx=15, pady=(10, 0))
 
-        ctk.CTkLabel(
-            task_frame,
+        self.task_text_label = ctk.CTkLabel(
+            self.task_frame,
             text=self.todo.get("text", ""),
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["text_primary"],
+            text_color=colors["text_primary"],
             wraplength=280
-        ).pack(anchor="w", padx=15, pady=(5, 10))
+        )
+        self.task_text_label.pack(anchor="w", padx=15, pady=(5, 10))
 
         # 快捷提醒选项
-        quick_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
-        quick_frame.pack(fill="x", padx=10, pady=5)
+        self.quick_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
+        self.quick_frame.pack(fill="x", padx=10, pady=5)
 
-        ctk.CTkLabel(
-            quick_frame,
+        self.quick_title_label = ctk.CTkLabel(
+            self.quick_frame,
             text="⚡ 快捷设置",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=COLORS["accent_yellow"]
-        ).pack(anchor="w", padx=15, pady=(10, 5))
+            text_color=colors["accent_yellow"]
+        )
+        self.quick_title_label.pack(anchor="w", padx=15, pady=(10, 5))
 
         options = ReminderController.get_quick_reminder_options()
-        button_frame = ctk.CTkFrame(quick_frame, fg_color="transparent")
-        button_frame.pack(fill="x", padx=10, pady=(0, 10))
+        self.button_frame = ctk.CTkFrame(self.quick_frame, fg_color="transparent")
+        self.button_frame.pack(fill="x", padx=10, pady=(0, 10))
 
+        self.quick_btns = []
         for i, (text, delta) in enumerate(options):
             row = i // 2
             col = i % 2
             btn = ctk.CTkButton(
-                button_frame,
+                self.button_frame,
                 text=text,
                 width=130,
                 height=32,
-                fg_color=COLORS["bg_input"],
-                hover_color=COLORS["accent_blue"],
+                fg_color=colors["bg_input"],
+                hover_color=colors["accent_blue"],
+                text_color=colors["text_primary"],
                 command=lambda d=delta: self._set_quick_reminder(d)
             )
             btn.grid(row=row, column=col, padx=5, pady=3)
+            self.quick_btns.append(btn)
 
         # 自定义时间
-        custom_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
-        custom_frame.pack(fill="x", padx=10, pady=5)
+        self.custom_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
+        self.custom_frame.pack(fill="x", padx=10, pady=5)
 
-        ctk.CTkLabel(
-            custom_frame,
+        self.custom_title_label = ctk.CTkLabel(
+            self.custom_frame,
             text="🕐 自定义时间",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=COLORS["accent_purple"]
-        ).pack(anchor="w", padx=15, pady=(10, 5))
+            text_color=colors["accent_purple"]
+        )
+        self.custom_title_label.pack(anchor="w", padx=15, pady=(10, 5))
 
-        time_input_frame = ctk.CTkFrame(custom_frame, fg_color="transparent")
-        time_input_frame.pack(fill="x", padx=15, pady=(0, 10))
+        self.time_input_frame = ctk.CTkFrame(self.custom_frame, fg_color="transparent")
+        self.time_input_frame.pack(fill="x", padx=15, pady=(5, 15))
 
         # 小时选择
-        ctk.CTkLabel(
-            time_input_frame,
+        self.hour_label = ctk.CTkLabel(
+            self.time_input_frame,
             text="时:",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"]
-        ).pack(side="left")
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color=colors["text_secondary"]
+        )
+        self.hour_label.pack(side="left")
 
         self.hour_var = ctk.StringVar(value=str(datetime.now().hour))
         self.hour_entry = ctk.CTkEntry(
-            time_input_frame,
-            width=50,
+            self.time_input_frame,
+            width=70,
+            height=42,
             textvariable=self.hour_var,
-            fg_color=COLORS["bg_input"],
+            fg_color=colors["bg_input"],
+            text_color=colors["text_primary"],
+            font=ctk.CTkFont(size=18, weight="bold"),
             justify="center"
         )
-        self.hour_entry.pack(side="left", padx=5)
+        self.hour_entry.pack(side="left", padx=8)
 
         # 分钟选择
-        ctk.CTkLabel(
-            time_input_frame,
+        self.minute_label = ctk.CTkLabel(
+            self.time_input_frame,
             text="分:",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"]
-        ).pack(side="left", padx=(10, 0))
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color=colors["text_secondary"]
+        )
+        self.minute_label.pack(side="left", padx=(10, 0))
 
         self.minute_var = ctk.StringVar(value=str((datetime.now().minute // 5 + 1) * 5 % 60))
         self.minute_entry = ctk.CTkEntry(
-            time_input_frame,
-            width=50,
+            self.time_input_frame,
+            width=70,
+            height=42,
             textvariable=self.minute_var,
-            fg_color=COLORS["bg_input"],
+            fg_color=colors["bg_input"],
+            text_color=colors["text_primary"],
+            font=ctk.CTkFont(size=18, weight="bold"),
             justify="center"
         )
-        self.minute_entry.pack(side="left", padx=5)
+        self.minute_entry.pack(side="left", padx=8)
 
-        ctk.CTkButton(
-            time_input_frame,
-            text="设置",
-            width=60,
-            fg_color=COLORS["accent_green"],
+        self.set_btn = ctk.CTkButton(
+            self.time_input_frame,
+            text="确定",
+            width=70,
+            height=42,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            fg_color=colors["accent_green"],
             hover_color="#2ea043",
+            text_color="#ffffff",
             command=self._set_custom_reminder
-        ).pack(side="left", padx=10)
+        )
+        self.set_btn.pack(side="left", padx=(15, 0))
 
         # 当前提醒状态
+        self.status_frame = None
+        self.status_label = None
+        self.cancel_btn = None
         current_reminder = self.todo.get("reminder_time")
         if current_reminder:
-            status_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=10)
-            status_frame.pack(fill="x", padx=10, pady=5)
-
-            try:
-                reminder_dt = datetime.fromisoformat(current_reminder)
-                reminder_str = reminder_dt.strftime("%m-%d %H:%M")
-            except:
-                reminder_str = current_reminder
-
-            ctk.CTkLabel(
-                status_frame,
-                text=f"📌 当前提醒: {reminder_str}",
-                font=ctk.CTkFont(size=12),
-                text_color=COLORS["accent_green"]
-            ).pack(side="left", padx=15, pady=10)
-
-            ctk.CTkButton(
-                status_frame,
-                text="取消提醒",
-                width=80,
-                height=28,
-                fg_color=COLORS["accent_red"],
-                hover_color="#da3633",
-                command=self._cancel_reminder
-            ).pack(side="right", padx=15, pady=10)
+            self._create_status_frame(current_reminder)
 
         # 关闭按钮
-        ctk.CTkButton(
+        self.close_btn = ctk.CTkButton(
             self,
             text="关闭",
             width=100,
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=self._close
-        ).pack(pady=15)
+        )
+        self.close_btn.pack(pady=15)
+
+    def _create_status_frame(self, current_reminder):
+        """创建当前提醒状态框架"""
+        colors = get_colors()
+
+        self.status_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=10)
+        self.status_frame.pack(fill="x", padx=10, pady=5)
+
+        try:
+            reminder_dt = datetime.fromisoformat(current_reminder)
+            reminder_str = reminder_dt.strftime("%m-%d %H:%M")
+        except:
+            reminder_str = current_reminder
+
+        self.status_label = ctk.CTkLabel(
+            self.status_frame,
+            text=f"📌 当前提醒: {reminder_str}",
+            font=ctk.CTkFont(size=12),
+            text_color=colors["accent_green"]
+        )
+        self.status_label.pack(side="left", padx=15, pady=10)
+
+        self.cancel_btn = ctk.CTkButton(
+            self.status_frame,
+            text="取消提醒",
+            width=80,
+            height=28,
+            fg_color=colors["accent_red"],
+            hover_color="#da3633",
+            text_color="#ffffff",
+            command=self._cancel_reminder
+        )
+        self.cancel_btn.pack(side="right", padx=15, pady=10)
 
     def _set_quick_reminder(self, delta):
         """设置快捷提醒
@@ -236,3 +276,52 @@ class ReminderDialog(ctk.CTkToplevel):
         if self._on_close:
             self._on_close()
         self.destroy()
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        self._apply_theme()
+
+    def _apply_theme(self):
+        """应用当前主题颜色"""
+        colors = get_colors()
+
+        # 更新窗口背景
+        self.configure(fg_color=colors["bg_dark"])
+
+        # 更新标题区域
+        self.title_frame.configure(fg_color=colors["bg_card"])
+        self.title_label.configure(text_color=colors["accent_blue"])
+
+        # 更新任务区域
+        self.task_frame.configure(fg_color=colors["bg_card"])
+        self.task_title_label.configure(text_color=colors["text_secondary"])
+        self.task_text_label.configure(text_color=colors["text_primary"])
+
+        # 更新快捷设置区域
+        self.quick_frame.configure(fg_color=colors["bg_card"])
+        self.quick_title_label.configure(text_color=colors["accent_yellow"])
+        for btn in self.quick_btns:
+            btn.configure(fg_color=colors["bg_input"], hover_color=colors["accent_blue"], text_color=colors["text_primary"])
+
+        # 更新自定义时间区域
+        self.custom_frame.configure(fg_color=colors["bg_card"])
+        self.custom_title_label.configure(text_color=colors["accent_purple"])
+        self.hour_label.configure(text_color=colors["text_secondary"])
+        self.minute_label.configure(text_color=colors["text_secondary"])
+        self.hour_entry.configure(fg_color=colors["bg_input"], text_color=colors["text_primary"])
+        self.minute_entry.configure(fg_color=colors["bg_input"], text_color=colors["text_primary"])
+        self.set_btn.configure(fg_color=colors["accent_green"])
+
+        # 更新状态区域
+        if self.status_frame:
+            self.status_frame.configure(fg_color=colors["bg_card"])
+            self.status_label.configure(text_color=colors["accent_green"])
+            self.cancel_btn.configure(fg_color=colors["accent_red"])
+
+        # 更新关闭按钮
+        self.close_btn.configure(fg_color=colors["bg_input"], hover_color=colors["border"], text_color=colors["text_primary"])
+
+    def destroy(self):
+        """销毁对话框"""
+        theme_manager.unregister_callback(self._on_theme_change)
+        super().destroy()

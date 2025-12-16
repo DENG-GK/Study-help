@@ -28,6 +28,13 @@ WORDS_FILE = os.path.join(DATA_DIR, "words.json")
 WORD_SETTINGS_FILE = os.path.join(DATA_DIR, "word_settings.json")
 WORD_STATS_FILE = os.path.join(DATA_DIR, "word_stats.json")
 
+# 数学数据文件
+MATH_QUESTIONS_FILE = os.path.join(DATA_DIR, "math_questions.json")
+MATH_MISTAKES_FILE = os.path.join(DATA_DIR, "math_mistakes.json")
+MATH_PROGRESS_FILE = os.path.join(DATA_DIR, "math_progress.json")
+MATH_SETTINGS_FILE = os.path.join(DATA_DIR, "math_settings.json")
+MATH_FORMULAS_FILE = os.path.join(DATA_DIR, "math_formulas.json")
+
 # 确保数据目录存在
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -44,6 +51,27 @@ DEFAULT_WORD_SETTINGS = {
     "learning_mode": "card",
     "auto_play_sound": False,
     "show_example": True
+}
+
+# ==================== 数学学习设置 ====================
+# 错题复习间隔（天）- 基于艾宾浩斯遗忘曲线
+MATH_REVIEW_INTERVALS = [1, 2, 4, 7, 15, 30]
+
+# 数学默认设置
+DEFAULT_MATH_SETTINGS = {
+    "daily_count": 3,                # 每日刷题数量：1/3/5
+    "difficulty_mode": "progressive", # 难度模式：progressive(递进)/random(随机)/fixed(固定)
+    "include_mistakes": True,        # 是否包含错题
+    "mistake_ratio": 0.3,            # 错题占比
+    "show_solution": True,           # 是否显示解析
+    "auto_add_mistake": False        # 答错是否自动加入错题本
+}
+
+# 数学章节配置
+MATH_CHAPTERS = {
+    "高等数学": ["极限", "导数", "积分", "微分方程", "级数", "多元函数"],
+    "线性代数": ["行列式", "矩阵", "向量", "线性方程组", "特征值"],
+    "概率统计": ["随机事件", "随机变量", "数字特征", "大数定律", "参数估计"]
 }
 
 # ==================== 默认科目 ====================
@@ -75,8 +103,8 @@ LIGHT_COLORS = {
     "accent_red": "#cf222e",
     "accent_yellow": "#9a6700",
     "accent_purple": "#8250df",
-    "text_primary": "#1f2328",
-    "text_secondary": "#656d76",
+    "text_primary": "#000000",      # 改为纯黑色，更清晰
+    "text_secondary": "#24292f",    # 改为深灰色，更清晰
     "border": "#d0d7de"
 }
 
@@ -177,10 +205,17 @@ class ThemeManager:
 # 创建全局主题管理器实例
 theme_manager = ThemeManager()
 
-# 兼容旧代码：COLORS 指向当前主题颜色
-COLORS = theme_manager.get_colors()
-
 
 def get_colors():
-    """获取当前主题颜色（推荐使用此函数）"""
+    """获取当前主题颜色（推荐使用此函数）
+
+    注意：此函数每次调用都会返回当前主题的颜色，
+    确保主题切换后能获取到最新颜色。
+    """
     return theme_manager.get_colors()
+
+
+# 兼容旧代码：COLORS 作为动态属性
+# 警告：直接使用 COLORS 可能导致主题切换后颜色不更新
+# 推荐使用 get_colors() 函数
+COLORS = theme_manager.get_colors()

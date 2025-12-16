@@ -10,7 +10,7 @@ matplotlib.use("TkAgg")
 matplotlib.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Arial"]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
-from config import COLORS, CHART_COLORS
+from config import get_colors, theme_manager, CHART_COLORS
 from models import RecordModel
 
 
@@ -25,11 +25,12 @@ class StatsDialog(ctk.CTkToplevel):
         """
         super().__init__(parent, **kwargs)
 
+        colors = get_colors()
         self.title("📊 学习统计")
         self.geometry("550x700")
         self.transient(parent)
         self.grab_set()
-        self.configure(fg_color=COLORS["bg_dark"])
+        self.configure(fg_color=colors["bg_dark"])
         self.geometry(f"+{parent.winfo_x() + 180}+{parent.winfo_y() + 10}")
 
         self.current_view = "week"  # week, month
@@ -37,42 +38,49 @@ class StatsDialog(ctk.CTkToplevel):
 
         self._create_widgets()
 
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
+
     def _create_widgets(self):
         """创建控件"""
-        # 顶部标题栏
-        header_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=0)
-        header_frame.pack(fill="x", padx=0, pady=0)
+        colors = get_colors()
 
-        title_label = ctk.CTkLabel(
-            header_frame,
+        # 顶部标题栏
+        self.header_frame = ctk.CTkFrame(self, fg_color=colors["bg_card"], corner_radius=0)
+        self.header_frame.pack(fill="x", padx=0, pady=0)
+
+        self.title_label = ctk.CTkLabel(
+            self.header_frame,
             text="📊 学习统计",
             font=ctk.CTkFont(size=18, weight="bold"),
-            text_color=COLORS["accent_blue"]
+            text_color=colors["accent_blue"]
         )
-        title_label.pack(side="left", padx=15, pady=10)
+        self.title_label.pack(side="left", padx=15, pady=10)
 
         # 切换按钮
-        switch_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        switch_frame.pack(side="right", padx=15, pady=10)
+        self.switch_frame = ctk.CTkFrame(self.header_frame, fg_color="transparent")
+        self.switch_frame.pack(side="right", padx=15, pady=10)
 
         self.week_btn = ctk.CTkButton(
-            switch_frame,
+            self.switch_frame,
             text="本周",
             width=60,
             height=28,
-            fg_color=COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
+            text_color="#ffffff",
             command=lambda: self._switch_view("week")
         )
         self.week_btn.pack(side="left", padx=2)
 
         self.month_btn = ctk.CTkButton(
-            switch_frame,
+            self.switch_frame,
             text="本月",
             width=60,
             height=28,
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["accent_purple"],
+            text_color=colors["text_primary"],
             command=lambda: self._switch_view("month")
         )
         self.month_btn.pack(side="left", padx=2)
@@ -84,14 +92,16 @@ class StatsDialog(ctk.CTkToplevel):
         self._update_content()
 
         # 关闭按钮
-        ctk.CTkButton(
+        self.close_btn = ctk.CTkButton(
             self,
             text="关闭",
             width=100,
-            fg_color=COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
+            text_color="#ffffff",
             command=self.destroy
-        ).pack(pady=10)
+        )
+        self.close_btn.pack(pady=10)
 
     def _switch_view(self, view):
         """切换视图
@@ -99,14 +109,15 @@ class StatsDialog(ctk.CTkToplevel):
         Args:
             view: 视图类型 (week/month)
         """
+        colors = get_colors()
         self.current_view = view
 
         if view == "week":
-            self.week_btn.configure(fg_color=COLORS["accent_blue"])
-            self.month_btn.configure(fg_color=COLORS["bg_input"])
+            self.week_btn.configure(fg_color=colors["accent_blue"], text_color="#ffffff")
+            self.month_btn.configure(fg_color=colors["bg_input"], text_color=colors["text_primary"])
         else:
-            self.week_btn.configure(fg_color=COLORS["bg_input"])
-            self.month_btn.configure(fg_color=COLORS["accent_blue"])
+            self.week_btn.configure(fg_color=colors["bg_input"], text_color=colors["text_primary"])
+            self.month_btn.configure(fg_color=colors["accent_blue"], text_color="#ffffff")
 
         self._update_content()
 
@@ -142,14 +153,16 @@ class StatsDialog(ctk.CTkToplevel):
 
     def _create_summary_card(self, stats, title_prefix):
         """创建总览卡片"""
-        summary_frame = ctk.CTkFrame(self.content_frame, fg_color=COLORS["bg_card"], corner_radius=10)
+        colors = get_colors()
+
+        summary_frame = ctk.CTkFrame(self.content_frame, fg_color=colors["bg_card"], corner_radius=10)
         summary_frame.pack(fill="x", pady=5)
 
         ctk.CTkLabel(
             summary_frame,
             text=f"📋 {title_prefix}总览",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["accent_yellow"]
+            text_color=colors["accent_yellow"]
         ).pack(anchor="w", padx=15, pady=(10, 5))
 
         # 统计数据
@@ -167,61 +180,63 @@ class StatsDialog(ctk.CTkToplevel):
         ]
 
         for i, (label, value) in enumerate(items):
-            item_frame = ctk.CTkFrame(data_frame, fg_color=COLORS["bg_input"], corner_radius=8)
+            item_frame = ctk.CTkFrame(data_frame, fg_color=colors["bg_input"], corner_radius=8)
             item_frame.grid(row=0, column=i, padx=5, pady=5, sticky="nsew")
             data_frame.grid_columnconfigure(i, weight=1)
 
             ctk.CTkLabel(
                 item_frame,
                 text=label,
-                font=ctk.CTkFont(size=10),
-                text_color=COLORS["text_secondary"]
+                font=ctk.CTkFont(size=11),
+                text_color=colors["text_secondary"]
             ).pack(pady=(8, 2))
 
             ctk.CTkLabel(
                 item_frame,
                 text=value,
-                font=ctk.CTkFont(size=14, weight="bold"),
-                text_color=COLORS["accent_blue"]
+                font=ctk.CTkFont(size=16, weight="bold"),
+                text_color=colors["accent_blue"]
             ).pack(pady=(0, 8))
 
     def _create_pie_chart(self, stats, title_prefix):
         """创建科目分布饼图"""
-        pie_frame = ctk.CTkFrame(self.content_frame, fg_color=COLORS["bg_card"], corner_radius=10)
+        colors = get_colors()
+
+        pie_frame = ctk.CTkFrame(self.content_frame, fg_color=colors["bg_card"], corner_radius=10)
         pie_frame.pack(fill="x", pady=5)
 
         ctk.CTkLabel(
             pie_frame,
             text=f"🥧 {title_prefix}学习分布",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["accent_purple"]
+            text_color=colors["accent_purple"]
         ).pack(anchor="w", padx=15, pady=(10, 5))
 
-        fig, ax = plt.subplots(figsize=(4.5, 2.5), facecolor=COLORS["bg_card"])
-        ax.set_facecolor(COLORS["bg_card"])
+        fig, ax = plt.subplots(figsize=(4.5, 2.5), facecolor=colors["bg_card"])
+        ax.set_facecolor(colors["bg_card"])
 
         subjects_data = stats.get("subjects", {})
 
         if subjects_data and sum(subjects_data.values()) > 0:
             labels = list(subjects_data.keys())
             sizes = list(subjects_data.values())
-            colors = CHART_COLORS[:len(labels)]
+            chart_colors = CHART_COLORS[:len(labels)]
 
             wedges, texts, autotexts = ax.pie(
                 sizes,
                 labels=labels,
                 autopct="%1.0f%%",
-                colors=colors,
-                textprops={"color": COLORS["text_primary"], "fontsize": 9},
+                colors=chart_colors,
+                textprops={"color": colors["text_primary"], "fontsize": 9},
                 pctdistance=0.75
             )
 
             for autotext in autotexts:
-                autotext.set_color(COLORS["text_primary"])
+                autotext.set_color(colors["text_primary"])
                 autotext.set_fontsize(8)
         else:
             ax.text(0.5, 0.5, "暂无数据", ha="center", va="center",
-                   fontsize=14, color=COLORS["text_secondary"], transform=ax.transAxes)
+                   fontsize=14, color=colors["text_secondary"], transform=ax.transAxes)
             ax.set_xlim(0, 1)
             ax.set_ylim(0, 1)
 
@@ -234,18 +249,20 @@ class StatsDialog(ctk.CTkToplevel):
 
     def _create_line_chart(self, stats, title_prefix):
         """创建每日趋势折线图"""
-        line_frame = ctk.CTkFrame(self.content_frame, fg_color=COLORS["bg_card"], corner_radius=10)
+        colors = get_colors()
+
+        line_frame = ctk.CTkFrame(self.content_frame, fg_color=colors["bg_card"], corner_radius=10)
         line_frame.pack(fill="x", pady=5)
 
         ctk.CTkLabel(
             line_frame,
             text=f"📈 {title_prefix}学习趋势",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["accent_green"]
+            text_color=colors["accent_green"]
         ).pack(anchor="w", padx=15, pady=(10, 5))
 
-        fig, ax = plt.subplots(figsize=(4.5, 3), facecolor=COLORS["bg_card"])
-        ax.set_facecolor(COLORS["bg_card"])
+        fig, ax = plt.subplots(figsize=(4.5, 3), facecolor=colors["bg_card"])
+        ax.set_facecolor(colors["bg_card"])
 
         daily_data = stats.get("daily_data", [])
 
@@ -262,23 +279,23 @@ class StatsDialog(ctk.CTkToplevel):
                 x_ticks = range(len(dates))
                 x_labels = dates
 
-            ax.plot(range(len(totals)), totals, marker="o", color=COLORS["accent_blue"],
+            ax.plot(range(len(totals)), totals, marker="o", color=colors["accent_blue"],
                     linewidth=2, markersize=4)
-            ax.fill_between(range(len(totals)), totals, alpha=0.3, color=COLORS["accent_blue"])
+            ax.fill_between(range(len(totals)), totals, alpha=0.3, color=colors["accent_blue"])
 
             ax.set_xticks(list(x_ticks))
             ax.set_xticklabels(x_labels, rotation=45, ha="right")
 
-        ax.set_xlabel("日期", color=COLORS["text_secondary"], fontsize=10)
-        ax.set_ylabel("学习时长(分钟)", color=COLORS["text_secondary"], fontsize=10)
+        ax.set_xlabel("日期", color=colors["text_secondary"], fontsize=10)
+        ax.set_ylabel("学习时长(分钟)", color=colors["text_secondary"], fontsize=10)
 
-        ax.tick_params(colors=COLORS["text_secondary"], labelsize=8)
-        ax.spines["bottom"].set_color(COLORS["border"])
-        ax.spines["left"].set_color(COLORS["border"])
+        ax.tick_params(colors=colors["text_secondary"], labelsize=8)
+        ax.spines["bottom"].set_color(colors["border"])
+        ax.spines["left"].set_color(colors["border"])
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
-        ax.grid(True, linestyle="--", alpha=0.3, color=COLORS["border"])
+        ax.grid(True, linestyle="--", alpha=0.3, color=colors["border"])
 
         plt.tight_layout()
 
@@ -286,3 +303,43 @@ class StatsDialog(ctk.CTkToplevel):
         canvas.draw()
         canvas.get_tk_widget().pack(fill="x", padx=10, pady=10)
         self.canvas_widgets.append(canvas)
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        self._apply_theme()
+
+    def _apply_theme(self):
+        """应用当前主题颜色"""
+        colors = get_colors()
+
+        # 更新窗口背景
+        self.configure(fg_color=colors["bg_dark"])
+
+        # 更新标题栏
+        self.header_frame.configure(fg_color=colors["bg_card"])
+        self.title_label.configure(text_color=colors["accent_blue"])
+
+        # 更新切换按钮
+        if self.current_view == "week":
+            self.week_btn.configure(fg_color=colors["accent_blue"], hover_color=colors["accent_purple"], text_color="#ffffff")
+            self.month_btn.configure(fg_color=colors["bg_input"], hover_color=colors["accent_purple"], text_color=colors["text_primary"])
+        else:
+            self.week_btn.configure(fg_color=colors["bg_input"], hover_color=colors["accent_purple"], text_color=colors["text_primary"])
+            self.month_btn.configure(fg_color=colors["accent_blue"], hover_color=colors["accent_purple"], text_color="#ffffff")
+
+        # 更新关闭按钮
+        self.close_btn.configure(fg_color=colors["accent_blue"], hover_color=colors["accent_purple"])
+
+        # 重新创建内容以应用新主题
+        self._update_content()
+
+    def destroy(self):
+        """销毁对话框"""
+        theme_manager.unregister_callback(self._on_theme_change)
+        # 关闭所有图表
+        for canvas in self.canvas_widgets:
+            try:
+                plt.close(canvas.figure)
+            except:
+                pass
+        super().destroy()

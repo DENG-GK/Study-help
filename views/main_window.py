@@ -4,10 +4,10 @@
 """
 
 import customtkinter as ctk
-from config import COLORS, APP_NAME, DEFAULT_FOCUS_TIME, theme_manager
+from config import get_colors, APP_NAME, DEFAULT_FOCUS_TIME, theme_manager
 from models import SubjectModel, RecordModel
 from controllers import PomodoroController, FocusController, ReminderController
-from views.components import HeaderComponent, StatsCard, PomodoroCard, TodoList, WordCard
+from views.components import HeaderComponent, StatsCard, PomodoroCard, TodoList, WordCard, MathCard
 from views.dialogs import (
     StatsDialog, SubjectDialog, WordbookDialog,
     WordStatsDialog, WordSettingsDialog,
@@ -29,7 +29,8 @@ class StudyAssistantApp(ctk.CTk):
         ctk.set_appearance_mode(theme_manager.current_theme)
         ctk.set_default_color_theme("blue")
 
-        self.configure(fg_color=COLORS["bg_dark"])
+        colors = get_colors()
+        self.configure(fg_color=colors["bg_dark"])
         self.attributes("-topmost", True)
 
         try:
@@ -40,6 +41,9 @@ class StudyAssistantApp(ctk.CTk):
         self._init_controllers()
         self._create_widgets()
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
 
     def _init_controllers(self):
         """初始化控制器"""
@@ -66,7 +70,7 @@ class StudyAssistantApp(ctk.CTk):
         self.header = HeaderComponent(
             self.main_container,
             on_opacity_change=self._change_opacity,
-            on_theme_toggle=self._on_theme_change
+            on_theme_toggle=self._handle_theme_toggle
         )
         self.header.pack(fill="x", padx=0, pady=0)
 
@@ -114,18 +118,21 @@ class StudyAssistantApp(ctk.CTk):
 
     def _create_focus_tracker(self):
         """创建专注记录区域"""
-        self.bottom_frame = ctk.CTkFrame(self.left_column, fg_color=COLORS["bg_card"], corner_radius=10)
+        colors = get_colors()
+
+        self.bottom_frame = ctk.CTkFrame(self.left_column, fg_color=colors["bg_card"], corner_radius=10)
         self.bottom_frame.pack(fill="x", padx=5, pady=5)
 
         self.track_subject_frame = ctk.CTkFrame(self.bottom_frame, fg_color="transparent")
         self.track_subject_frame.pack(fill="x", padx=15, pady=(8, 5))
 
-        ctk.CTkLabel(
+        self.track_label = ctk.CTkLabel(
             self.track_subject_frame,
             text="记录科目：",
             font=ctk.CTkFont(size=10),
-            text_color=COLORS["text_secondary"]
-        ).pack(side="left")
+            text_color=colors["text_secondary"]
+        )
+        self.track_label.pack(side="left")
 
         subjects = SubjectModel.load_subjects()
         self.track_subject_var = ctk.StringVar(value="其他")
@@ -133,11 +140,16 @@ class StudyAssistantApp(ctk.CTk):
             self.track_subject_frame,
             values=subjects,
             variable=self.track_subject_var,
-            width=90,
-            height=24,
-            fg_color=COLORS["bg_input"],
-            button_color=COLORS["accent_green"],
-            button_hover_color=COLORS["accent_blue"]
+            width=100,
+            height=28,
+            font=ctk.CTkFont(size=13),
+            fg_color=colors["bg_input"],
+            button_color=colors["accent_green"],
+            button_hover_color=colors["accent_blue"],
+            text_color=colors["text_primary"],
+            dropdown_text_color=colors["text_primary"],
+            dropdown_fg_color=colors["bg_card"],
+            dropdown_hover_color=colors["accent_green"]
         )
         self.track_subject_menu.pack(side="left", padx=5)
 
@@ -145,7 +157,7 @@ class StudyAssistantApp(ctk.CTk):
             self.bottom_frame,
             text="⏱ 开始记录学习时长",
             height=32,
-            fg_color=COLORS["accent_green"],
+            fg_color=colors["accent_green"],
             hover_color="#2ea043",
             text_color="#000000",
             font=ctk.CTkFont(size=12, weight="bold"),
@@ -154,17 +166,101 @@ class StudyAssistantApp(ctk.CTk):
         self.focus_track_btn.pack(fill="x", padx=15, pady=(5, 8))
 
     def _create_right_panel(self):
-        """创建右栏 - 背单词面板"""
+        """创建右栏 - 学习面板（英语/数学切换）"""
+        colors = get_colors()
+
+        # 顶部切换按钮
+        self.right_header = ctk.CTkFrame(self.right_column, fg_color=colors["bg_card"], corner_radius=10)
+        self.right_header.pack(fill="x", padx=5, pady=5)
+
+        header_inner = ctk.CTkFrame(self.right_header, fg_color="transparent")
+        header_inner.pack(fill="x", padx=10, pady=8)
+
+        self.current_right_tab = "english"  # 当前Tab
+
+        self.english_tab_btn = ctk.CTkButton(
+            header_inner,
+            text="📖 英语单词",
+            width=100,
+            height=30,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=colors["accent_purple"],
+            hover_color=colors["accent_blue"],
+            text_color="#ffffff",
+            command=lambda: self._switch_right_tab("english")
+        )
+        self.english_tab_btn.pack(side="left", padx=5)
+
+        self.math_tab_btn = ctk.CTkButton(
+            header_inner,
+            text="📐 考研数学",
+            width=100,
+            height=30,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=colors["bg_input"],
+            hover_color=colors["accent_blue"],
+            text_color=colors["text_primary"],
+            command=lambda: self._switch_right_tab("math")
+        )
+        self.math_tab_btn.pack(side="left", padx=5)
+
+        # 内容容器
+        self.right_content = ctk.CTkFrame(self.right_column, fg_color="transparent")
+        self.right_content.pack(fill="both", expand=True, padx=5, pady=(0, 5))
+
+        # 英语单词卡片
         self.word_card = WordCard(
-            self.right_column,
+            self.right_content,
             on_wordbook_click=self._show_wordbook_dialog,
             on_stats_click=self._show_word_stats_dialog,
             on_settings_click=self._show_word_settings_dialog
         )
-        self.word_card.pack(fill="both", expand=True)
+
+        # 数学卡片
+        self.math_card = MathCard(self.right_content)
+
+        # 默认显示英语
+        self._show_right_tab("english")
+
+    def _switch_right_tab(self, tab):
+        """切换右侧面板Tab"""
+        colors = get_colors()
+        self.current_right_tab = tab
+
+        if tab == "english":
+            self.english_tab_btn.configure(
+                fg_color=colors["accent_purple"],
+                text_color="#ffffff"
+            )
+            self.math_tab_btn.configure(
+                fg_color=colors["bg_input"],
+                text_color=colors["text_primary"]
+            )
+        else:
+            self.english_tab_btn.configure(
+                fg_color=colors["bg_input"],
+                text_color=colors["text_primary"]
+            )
+            self.math_tab_btn.configure(
+                fg_color=colors["accent_blue"],
+                text_color="#ffffff"
+            )
+
+        self._show_right_tab(tab)
+
+    def _show_right_tab(self, tab):
+        """显示指定的右侧Tab"""
+        self.word_card.pack_forget()
+        self.math_card.pack_forget()
+
+        if tab == "english":
+            self.word_card.pack(fill="both", expand=True)
+        else:
+            self.math_card.pack(fill="both", expand=True)
 
     def _on_closing(self):
         """窗口关闭处理"""
+        theme_manager.unregister_callback(self._on_theme_change)
         self.reminder_controller.stop()
         self.pomodoro_controller.reset()
         if self.focus_controller.is_tracking:
@@ -177,15 +273,62 @@ class StudyAssistantApp(ctk.CTk):
         except:
             pass
 
-    def _on_theme_change(self, theme):
-        """主题变化回调
-
-        Args:
-            theme: 新主题名称
-        """
-        # CustomTkinter 会自动处理大部分颜色变化
-        # 这里可以添加额外的自定义处理
+    def _handle_theme_toggle(self, theme):
+        """主题切换按钮回调（来自 HeaderComponent）"""
+        # HeaderComponent 会触发 theme_manager.toggle_theme()
+        # theme_manager 会通知所有注册的回调
         pass
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        colors = get_colors()
+
+        # 更新主窗口背景
+        self.configure(fg_color=colors["bg_dark"])
+
+        # 更新右侧面板切换按钮
+        self.right_header.configure(fg_color=colors["bg_card"])
+        if self.current_right_tab == "english":
+            self.english_tab_btn.configure(
+                fg_color=colors["accent_purple"],
+                hover_color=colors["accent_blue"],
+                text_color="#ffffff"
+            )
+            self.math_tab_btn.configure(
+                fg_color=colors["bg_input"],
+                hover_color=colors["accent_blue"],
+                text_color=colors["text_primary"]
+            )
+        else:
+            self.english_tab_btn.configure(
+                fg_color=colors["bg_input"],
+                hover_color=colors["accent_blue"],
+                text_color=colors["text_primary"]
+            )
+            self.math_tab_btn.configure(
+                fg_color=colors["accent_blue"],
+                hover_color=colors["accent_purple"],
+                text_color="#ffffff"
+            )
+
+        # 更新专注记录区域
+        self.bottom_frame.configure(fg_color=colors["bg_card"])
+        self.track_label.configure(text_color=colors["text_secondary"])
+        self.track_subject_menu.configure(
+            fg_color=colors["bg_input"],
+            button_color=colors["accent_green"],
+            button_hover_color=colors["accent_blue"],
+            text_color=colors["text_primary"],
+            dropdown_text_color=colors["text_primary"],
+            dropdown_fg_color=colors["bg_card"],
+            dropdown_hover_color=colors["accent_green"]
+        )
+
+        # 更新专注按钮（根据当前状态）
+        if self.focus_controller.is_tracking:
+            self.focus_track_btn.configure(fg_color=colors["accent_red"])
+        else:
+            self.focus_track_btn.configure(fg_color=colors["accent_green"])
 
     def _update_stats_display(self):
         stats = RecordModel.get_today_stats()
@@ -196,6 +339,7 @@ class StudyAssistantApp(ctk.CTk):
         )
 
     def _toggle_pomodoro(self):
+        colors = get_colors()
         if not self.pomodoro_controller.running:
             subject = self.pomodoro_card.get_current_subject()
             self.pomodoro_controller.start(subject)
@@ -204,14 +348,15 @@ class StudyAssistantApp(ctk.CTk):
         else:
             self.pomodoro_controller.pause()
             self.pomodoro_card.update_start_button(False)
-            self.pomodoro_card.update_status("已暂停", COLORS["text_secondary"])
+            self.pomodoro_card.update_status("已暂停", colors["text_secondary"])
 
     def _reset_pomodoro(self):
+        colors = get_colors()
         self.pomodoro_controller.reset()
         self.pomodoro_card.update_timer(PomodoroController.format_time(DEFAULT_FOCUS_TIME * 60))
         self.pomodoro_card.update_start_button(False)
-        self.pomodoro_card.update_status("准备开始专注", COLORS["text_secondary"])
-        self.pomodoro_card.timer_label.configure(text_color=COLORS["accent_blue"])
+        self.pomodoro_card.update_status("准备开始专注", colors["text_secondary"])
+        self.pomodoro_card.timer_label.configure(text_color=colors["accent_blue"])
 
     def _on_pomodoro_tick(self, remaining_seconds):
         self.after(0, lambda: self._update_pomodoro_timer(remaining_seconds))
@@ -228,39 +373,42 @@ class StudyAssistantApp(ctk.CTk):
         self.after(0, lambda: self._handle_pomodoro_complete(was_focus_time))
 
     def _handle_pomodoro_complete(self, was_focus_time):
+        colors = get_colors()
         self.pomodoro_card.update_start_button(False)
         if was_focus_time:
-            self.pomodoro_card.update_status("🎉 专注完成！休息一下吧", COLORS["accent_yellow"])
+            self.pomodoro_card.update_status("🎉 专注完成！休息一下吧", colors["accent_yellow"])
         else:
-            self.pomodoro_card.update_status("☕ 休息结束！准备下一轮", COLORS["accent_blue"])
+            self.pomodoro_card.update_status("☕ 休息结束！准备下一轮", colors["accent_blue"])
         time_str = PomodoroController.format_time(self.pomodoro_controller.remaining_seconds)
         self.pomodoro_card.update_timer(time_str)
 
     def _update_pomodoro_status(self):
+        colors = get_colors()
         status = self.pomodoro_controller.status_text
         if self.pomodoro_controller.is_focus_time:
-            color = COLORS["accent_green"]
+            color = colors["accent_green"]
         else:
-            color = COLORS["accent_yellow"]
+            color = colors["accent_yellow"]
         self.pomodoro_card.update_status(status, color)
 
     def _on_subject_change(self, value):
         self.pomodoro_controller.current_subject = value
 
     def _toggle_focus_tracking(self):
+        colors = get_colors()
         if not self.focus_controller.is_tracking:
             subject = self.track_subject_var.get()
             self.focus_controller.start(subject)
             self.focus_track_btn.configure(
                 text=f"⏹ 停止记录 ({subject})",
-                fg_color=COLORS["accent_red"],
+                fg_color=colors["accent_red"],
                 hover_color="#da3633"
             )
         else:
             self.focus_controller.stop()
             self.focus_track_btn.configure(
                 text="⏱ 开始记录学习时长",
-                fg_color=COLORS["accent_green"],
+                fg_color=colors["accent_green"],
                 hover_color="#2ea043"
             )
 

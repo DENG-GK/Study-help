@@ -3,7 +3,7 @@
 """
 
 import customtkinter as ctk
-from config import COLORS, DEFAULT_FOCUS_TIME
+from config import get_colors, theme_manager, DEFAULT_FOCUS_TIME
 
 
 class PomodoroCard(ctk.CTkFrame):
@@ -21,7 +21,8 @@ class PomodoroCard(ctk.CTkFrame):
             on_subject_change: 科目变更回调
             on_manage_subjects: 管理科目回调
         """
-        super().__init__(parent, fg_color=COLORS["bg_card"], corner_radius=10, **kwargs)
+        colors = get_colors()
+        super().__init__(parent, fg_color=colors["bg_card"], corner_radius=10, **kwargs)
 
         self._subjects = subjects
         self._on_start = on_start
@@ -31,14 +32,19 @@ class PomodoroCard(ctk.CTkFrame):
 
         self._create_widgets()
 
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
+
     def _create_widgets(self):
         """创建控件"""
+        colors = get_colors()
+
         # 标题
         self.pomodoro_title = ctk.CTkLabel(
             self,
             text="🍅 番茄钟",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["accent_red"]
+            text_color=colors["accent_red"]
         )
         self.pomodoro_title.pack(anchor="w", padx=15, pady=(10, 5))
 
@@ -46,23 +52,29 @@ class PomodoroCard(ctk.CTkFrame):
         self.subject_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.subject_frame.pack(fill="x", padx=15, pady=(0, 5))
 
-        ctk.CTkLabel(
+        self.subject_label = ctk.CTkLabel(
             self.subject_frame,
             text="科目：",
             font=ctk.CTkFont(size=11),
-            text_color=COLORS["text_secondary"]
-        ).pack(side="left")
+            text_color=colors["text_secondary"]
+        )
+        self.subject_label.pack(side="left")
 
         self.subject_var = ctk.StringVar(value="其他")
         self.subject_menu = ctk.CTkOptionMenu(
             self.subject_frame,
             values=self._subjects,
             variable=self.subject_var,
-            width=100,
-            height=25,
-            fg_color=COLORS["bg_input"],
-            button_color=COLORS["accent_blue"],
-            button_hover_color=COLORS["accent_purple"],
+            width=110,
+            height=28,
+            font=ctk.CTkFont(size=13),
+            fg_color=colors["bg_input"],
+            button_color=colors["accent_blue"],
+            button_hover_color=colors["accent_purple"],
+            text_color=colors["text_primary"],
+            dropdown_text_color=colors["text_primary"],
+            dropdown_fg_color=colors["bg_card"],
+            dropdown_hover_color=colors["accent_blue"],
             command=self._on_subject_change
         )
         self.subject_menu.pack(side="left", padx=5)
@@ -74,7 +86,7 @@ class PomodoroCard(ctk.CTkFrame):
             width=25,
             height=25,
             fg_color="transparent",
-            hover_color=COLORS["bg_input"],
+            hover_color=colors["bg_input"],
             command=self._on_manage_subjects
         )
         self.manage_subject_btn.pack(side="left", padx=2)
@@ -83,19 +95,19 @@ class PomodoroCard(ctk.CTkFrame):
         self.timer_label = ctk.CTkLabel(
             self,
             text="25:00",
-            font=ctk.CTkFont(size=40, weight="bold"),
-            text_color=COLORS["accent_blue"]
+            font=ctk.CTkFont(size=52, weight="bold"),
+            text_color=colors["accent_blue"]
         )
-        self.timer_label.pack(pady=8)
+        self.timer_label.pack(pady=10)
 
         # 状态文字
         self.status_label = ctk.CTkLabel(
             self,
             text="准备开始专注",
-            font=ctk.CTkFont(size=11),
-            text_color=COLORS["text_secondary"]
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=colors["text_secondary"]
         )
-        self.status_label.pack(pady=(0, 8))
+        self.status_label.pack(pady=(0, 10))
 
         # 按钮
         self.pomo_btn_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -106,8 +118,9 @@ class PomodoroCard(ctk.CTkFrame):
             text="▶ 开始",
             width=90,
             height=30,
-            fg_color=COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
+            text_color="#ffffff",
             command=self._on_start
         )
         self.start_btn.pack(side="left", expand=True, padx=5)
@@ -117,8 +130,9 @@ class PomodoroCard(ctk.CTkFrame):
             text="↺ 重置",
             width=90,
             height=30,
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["border"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"],
             command=self._on_reset
         )
         self.reset_btn.pack(side="left", expand=True, padx=5)
@@ -138,11 +152,12 @@ class PomodoroCard(ctk.CTkFrame):
             remaining_seconds: 剩余秒数
             is_focus_time: 是否是专注时间
         """
+        colors = get_colors()
         if is_focus_time:
             if remaining_seconds < 60:
-                self.timer_label.configure(text_color=COLORS["accent_red"])
+                self.timer_label.configure(text_color=colors["accent_red"])
             else:
-                self.timer_label.configure(text_color=COLORS["accent_blue"])
+                self.timer_label.configure(text_color=colors["accent_blue"])
 
     def update_status(self, status_text, color=None):
         """更新状态文本
@@ -152,7 +167,7 @@ class PomodoroCard(ctk.CTkFrame):
             color: 颜色（可选）
         """
         if color is None:
-            color = COLORS["text_secondary"]
+            color = get_colors()["text_secondary"]
         self.status_label.configure(text=status_text, text_color=color)
 
     def update_start_button(self, is_running):
@@ -182,3 +197,53 @@ class PomodoroCard(ctk.CTkFrame):
             当前科目名称
         """
         return self.subject_var.get()
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        self._apply_theme()
+
+    def _apply_theme(self):
+        """应用当前主题颜色"""
+        colors = get_colors()
+
+        # 更新自身背景
+        self.configure(fg_color=colors["bg_card"])
+
+        # 更新标题
+        self.pomodoro_title.configure(text_color=colors["accent_red"])
+
+        # 更新科目选择
+        self.subject_label.configure(text_color=colors["text_secondary"])
+        self.subject_menu.configure(
+            fg_color=colors["bg_input"],
+            button_color=colors["accent_blue"],
+            button_hover_color=colors["accent_purple"],
+            text_color=colors["text_primary"],
+            dropdown_text_color=colors["text_primary"],
+            dropdown_fg_color=colors["bg_card"],
+            dropdown_hover_color=colors["accent_blue"]
+        )
+        self.manage_subject_btn.configure(hover_color=colors["bg_input"])
+
+        # 更新计时器（保持当前颜色逻辑）
+        self.timer_label.configure(text_color=colors["accent_blue"])
+
+        # 更新状态
+        self.status_label.configure(text_color=colors["text_secondary"])
+
+        # 更新按钮
+        self.start_btn.configure(
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
+            text_color="#ffffff"
+        )
+        self.reset_btn.configure(
+            fg_color=colors["bg_input"],
+            hover_color=colors["border"],
+            text_color=colors["text_primary"]
+        )
+
+    def destroy(self):
+        """销毁组件时注销回调"""
+        theme_manager.unregister_callback(self._on_theme_change)
+        super().destroy()

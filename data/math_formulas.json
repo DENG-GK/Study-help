@@ -1,0 +1,250 @@
+{
+  "formulas": {
+    "极限": [
+      {
+        "name": "重要极限1",
+        "formula": "\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1",
+        "description": "第一个重要极限"
+      },
+      {
+        "name": "重要极限2",
+        "formula": "\\lim_{x \\to \\infty} \\left(1 + \\frac{1}{x}\\right)^x = e",
+        "description": "第二个重要极限"
+      },
+      {
+        "name": "等价无穷小",
+        "formula": "\\sin x \\sim x,\\quad \\tan x \\sim x,\\quad \\ln(1+x) \\sim x,\\quad e^x - 1 \\sim x",
+        "description": "当 x→0 时"
+      },
+      {
+        "name": "等价无穷小2",
+        "formula": "1 - \\cos x \\sim \\frac{x^2}{2},\\quad \\arcsin x \\sim x,\\quad \\arctan x \\sim x",
+        "description": "当 x→0 时"
+      }
+    ],
+    "导数": [
+      {
+        "name": "幂函数",
+        "formula": "(x^n)' = nx^{n-1}",
+        "description": "n为任意实数"
+      },
+      {
+        "name": "指数函数",
+        "formula": "(e^x)' = e^x,\\quad (a^x)' = a^x \\ln a",
+        "description": "a > 0 且 a ≠ 1"
+      },
+      {
+        "name": "对数函数",
+        "formula": "(\\ln x)' = \\frac{1}{x},\\quad (\\log_a x)' = \\frac{1}{x \\ln a}",
+        "description": "x > 0"
+      },
+      {
+        "name": "三角函数",
+        "formula": "(\\sin x)' = \\cos x,\\quad (\\cos x)' = -\\sin x",
+        "description": "基本三角函数求导"
+      },
+      {
+        "name": "三角函数2",
+        "formula": "(\\tan x)' = \\sec^2 x,\\quad (\\cot x)' = -\\csc^2 x",
+        "description": "正切余切求导"
+      },
+      {
+        "name": "反三角函数",
+        "formula": "(\\arcsin x)' = \\frac{1}{\\sqrt{1-x^2}},\\quad (\\arctan x)' = \\frac{1}{1+x^2}",
+        "description": "|x| < 1 或 x ∈ R"
+      },
+      {
+        "name": "乘法法则",
+        "formula": "(uv)' = u'v + uv'",
+        "description": "两函数乘积的导数"
+      },
+      {
+        "name": "除法法则",
+        "formula": "\\left(\\frac{u}{v}\\right)' = \\frac{u'v - uv'}{v^2}",
+        "description": "两函数商的导数"
+      },
+      {
+        "name": "链式法则",
+        "formula": "[f(g(x))]' = f'(g(x)) \\cdot g'(x)",
+        "description": "复合函数求导"
+      }
+    ],
+    "积分": [
+      {
+        "name": "幂函数",
+        "formula": "\\int x^n dx = \\frac{x^{n+1}}{n+1} + C \\quad (n \\neq -1)",
+        "description": "幂函数积分"
+      },
+      {
+        "name": "指数函数",
+        "formula": "\\int e^x dx = e^x + C,\\quad \\int a^x dx = \\frac{a^x}{\\ln a} + C",
+        "description": "指数函数积分"
+      },
+      {
+        "name": "对数",
+        "formula": "\\int \\frac{1}{x} dx = \\ln|x| + C",
+        "description": "对数积分"
+      },
+      {
+        "name": "三角函数",
+        "formula": "\\int \\sin x dx = -\\cos x + C,\\quad \\int \\cos x dx = \\sin x + C",
+        "description": "三角函数积分"
+      },
+      {
+        "name": "反三角函数",
+        "formula": "\\int \\frac{1}{1+x^2} dx = \\arctan x + C,\\quad \\int \\frac{1}{\\sqrt{1-x^2}} dx = \\arcsin x + C",
+        "description": "反三角函数积分"
+      },
+      {
+        "name": "分部积分",
+        "formula": "\\int u dv = uv - \\int v du",
+        "description": "分部积分公式"
+      },
+      {
+        "name": "换元积分",
+        "formula": "\\int f(g(x))g'(x)dx = \\int f(u)du \\quad (u = g(x))",
+        "description": "第一类换元法"
+      }
+    ],
+    "行列式": [
+      {
+        "name": "二阶行列式",
+        "formula": "\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix} = ad - bc",
+        "description": "二阶行列式展开"
+      },
+      {
+        "name": "数乘性质",
+        "formula": "|kA| = k^n|A|",
+        "description": "n为矩阵阶数"
+      },
+      {
+        "name": "乘积性质",
+        "formula": "|AB| = |A| \\cdot |B|",
+        "description": "行列式的乘法"
+      },
+      {
+        "name": "逆矩阵行列式",
+        "formula": "|A^{-1}| = \\frac{1}{|A|}",
+        "description": "逆矩阵的行列式"
+      },
+      {
+        "name": "伴随矩阵行列式",
+        "formula": "|A^*| = |A|^{n-1}",
+        "description": "n阶矩阵的伴随矩阵"
+      }
+    ],
+    "矩阵": [
+      {
+        "name": "转置性质",
+        "formula": "(AB)^T = B^T A^T",
+        "description": "乘积的转置"
+      },
+      {
+        "name": "逆矩阵性质",
+        "formula": "(AB)^{-1} = B^{-1}A^{-1}",
+        "description": "乘积的逆"
+      },
+      {
+        "name": "伴随矩阵",
+        "formula": "A^{-1} = \\frac{1}{|A|}A^*,\\quad AA^* = A^*A = |A|E",
+        "description": "伴随矩阵公式"
+      },
+      {
+        "name": "二阶逆矩阵",
+        "formula": "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}^{-1} = \\frac{1}{ad-bc}\\begin{pmatrix} d & -b \\\\ -c & a \\end{pmatrix}",
+        "description": "二阶矩阵求逆公式"
+      }
+    ],
+    "特征值": [
+      {
+        "name": "特征方程",
+        "formula": "|A - \\lambda E| = 0",
+        "description": "求特征值的方程"
+      },
+      {
+        "name": "特征值之和",
+        "formula": "\\sum_{i=1}^{n} \\lambda_i = tr(A)",
+        "description": "等于矩阵的迹"
+      },
+      {
+        "name": "特征值之积",
+        "formula": "\\prod_{i=1}^{n} \\lambda_i = |A|",
+        "description": "等于行列式"
+      },
+      {
+        "name": "相似矩阵",
+        "formula": "P^{-1}AP = \\Lambda",
+        "description": "对角化公式"
+      }
+    ],
+    "概率": [
+      {
+        "name": "加法公式",
+        "formula": "P(A \\cup B) = P(A) + P(B) - P(AB)",
+        "description": "一般加法公式"
+      },
+      {
+        "name": "乘法公式",
+        "formula": "P(AB) = P(A)P(B|A) = P(B)P(A|B)",
+        "description": "条件概率乘法"
+      },
+      {
+        "name": "全概率公式",
+        "formula": "P(A) = \\sum_{i=1}^{n} P(B_i)P(A|B_i)",
+        "description": "完备事件组"
+      },
+      {
+        "name": "贝叶斯公式",
+        "formula": "P(B_i|A) = \\frac{P(B_i)P(A|B_i)}{\\sum_{j=1}^{n} P(B_j)P(A|B_j)}",
+        "description": "后验概率"
+      },
+      {
+        "name": "独立性",
+        "formula": "P(AB) = P(A)P(B)",
+        "description": "事件独立的充要条件"
+      }
+    ],
+    "随机变量": [
+      {
+        "name": "二项分布",
+        "formula": "X \\sim B(n,p):\\quad E(X) = np,\\quad D(X) = np(1-p)",
+        "description": "n次独立重复试验"
+      },
+      {
+        "name": "泊松分布",
+        "formula": "X \\sim P(\\lambda):\\quad E(X) = D(X) = \\lambda",
+        "description": "稀有事件分布"
+      },
+      {
+        "name": "正态分布",
+        "formula": "X \\sim N(\\mu, \\sigma^2):\\quad E(X) = \\mu,\\quad D(X) = \\sigma^2",
+        "description": "正态分布参数"
+      },
+      {
+        "name": "标准化",
+        "formula": "Z = \\frac{X - \\mu}{\\sigma} \\sim N(0, 1)",
+        "description": "标准正态分布"
+      },
+      {
+        "name": "方差公式",
+        "formula": "D(X) = E(X^2) - [E(X)]^2",
+        "description": "方差计算公式"
+      },
+      {
+        "name": "期望性质",
+        "formula": "E(aX + bY) = aE(X) + bE(Y)",
+        "description": "期望的线性性"
+      },
+      {
+        "name": "方差性质",
+        "formula": "D(aX + b) = a^2 D(X)",
+        "description": "方差的性质"
+      },
+      {
+        "name": "协方差",
+        "formula": "Cov(X,Y) = E(XY) - E(X)E(Y)",
+        "description": "协方差公式"
+      }
+    ]
+  }
+}

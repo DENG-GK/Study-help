@@ -1,0 +1,8 @@
+{
+  "daily_count": 3,
+  "difficulty_mode": "progressive",
+  "include_mistakes": true,
+  "mistake_ratio": 0.3,
+  "show_solution": true,
+  "auto_add_mistake": false
+}

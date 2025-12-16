@@ -4,7 +4,7 @@
 
 import customtkinter as ctk
 from datetime import datetime
-from config import COLORS, theme_manager
+from config import get_colors, theme_manager
 
 
 class HeaderComponent(ctk.CTkFrame):
@@ -18,7 +18,8 @@ class HeaderComponent(ctk.CTkFrame):
             on_opacity_change: 透明度变化回调函数
             on_theme_toggle: 主题切换回调函数
         """
-        super().__init__(parent, fg_color=COLORS["bg_card"], corner_radius=0, **kwargs)
+        colors = get_colors()
+        super().__init__(parent, fg_color=colors["bg_card"], corner_radius=0, **kwargs)
 
         self._on_opacity_change = on_opacity_change
         self._on_theme_toggle = on_theme_toggle
@@ -27,14 +28,19 @@ class HeaderComponent(ctk.CTkFrame):
         self._create_widgets()
         self._bind_events()
 
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
+
     def _create_widgets(self):
         """创建控件"""
+        colors = get_colors()
+
         # 标题
         self.title_label = ctk.CTkLabel(
             self,
             text="📚 ImgMaster的专用学习助手",
             font=ctk.CTkFont(size=18, weight="bold"),
-            text_color=COLORS["accent_blue"]
+            text_color=colors["accent_blue"]
         )
         self.title_label.pack(side="left", padx=15, pady=10)
 
@@ -43,7 +49,7 @@ class HeaderComponent(ctk.CTkFrame):
             self,
             text=datetime.now().strftime("%m月%d日"),
             font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"]
+            text_color=colors["text_secondary"]
         )
         self.date_label.pack(side="right", padx=15, pady=10)
 
@@ -54,8 +60,9 @@ class HeaderComponent(ctk.CTkFrame):
             text=theme_icon,
             width=32,
             height=28,
-            fg_color=COLORS["bg_input"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["bg_input"],
+            hover_color=colors["accent_purple"],
+            text_color=colors["text_primary"],
             command=self._toggle_theme
         )
         self.theme_btn.pack(side="right", padx=5, pady=10)
@@ -64,12 +71,13 @@ class HeaderComponent(ctk.CTkFrame):
         self.opacity_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.opacity_frame.pack(side="right", padx=10)
 
-        ctk.CTkLabel(
+        self.opacity_icon_label = ctk.CTkLabel(
             self.opacity_frame,
             text="🔆",
             font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"]
-        ).pack(side="left", padx=2)
+            text_color=colors["text_secondary"]
+        )
+        self.opacity_icon_label.pack(side="left", padx=2)
 
         self.opacity_slider = ctk.CTkSlider(
             self.opacity_frame,
@@ -78,10 +86,10 @@ class HeaderComponent(ctk.CTkFrame):
             number_of_steps=70,
             width=100,
             height=14,
-            fg_color=COLORS["bg_input"],
-            progress_color=COLORS["accent_blue"],
-            button_color=COLORS["accent_blue"],
-            button_hover_color=COLORS["accent_purple"],
+            fg_color=colors["bg_input"],
+            progress_color=colors["accent_blue"],
+            button_color=colors["accent_blue"],
+            button_hover_color=colors["accent_purple"],
             command=self._on_slider_change
         )
         self.opacity_slider.set(0.92)
@@ -91,7 +99,7 @@ class HeaderComponent(ctk.CTkFrame):
             self.opacity_frame,
             text="92%",
             font=ctk.CTkFont(size=10),
-            text_color=COLORS["text_secondary"],
+            text_color=colors["text_secondary"],
             width=30
         )
         self.opacity_value_label.pack(side="left", padx=2)
@@ -141,3 +149,44 @@ class HeaderComponent(ctk.CTkFrame):
         """更新主题按钮图标"""
         theme_icon = "🌙" if theme_manager.is_dark else "☀️"
         self.theme_btn.configure(text=theme_icon)
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        self._apply_theme()
+
+    def _apply_theme(self):
+        """应用当前主题颜色"""
+        colors = get_colors()
+
+        # 更新自身背景
+        self.configure(fg_color=colors["bg_card"])
+
+        # 更新标题颜色
+        self.title_label.configure(text_color=colors["accent_blue"])
+
+        # 更新日期颜色
+        self.date_label.configure(text_color=colors["text_secondary"])
+
+        # 更新主题按钮
+        theme_icon = "🌙" if theme_manager.is_dark else "☀️"
+        self.theme_btn.configure(
+            text=theme_icon,
+            fg_color=colors["bg_input"],
+            hover_color=colors["accent_purple"],
+            text_color=colors["text_primary"]
+        )
+
+        # 更新透明度相关组件
+        self.opacity_icon_label.configure(text_color=colors["text_secondary"])
+        self.opacity_slider.configure(
+            fg_color=colors["bg_input"],
+            progress_color=colors["accent_blue"],
+            button_color=colors["accent_blue"],
+            button_hover_color=colors["accent_purple"]
+        )
+        self.opacity_value_label.configure(text_color=colors["text_secondary"])
+
+    def destroy(self):
+        """销毁组件时注销回调"""
+        theme_manager.unregister_callback(self._on_theme_change)
+        super().destroy()

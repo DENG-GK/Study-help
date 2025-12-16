@@ -5,7 +5,7 @@
 import time
 import customtkinter as ctk
 from datetime import datetime
-from config import COLORS
+from config import get_colors, theme_manager
 from models import TodoModel, RecordModel, BaseModel
 
 
@@ -20,15 +20,21 @@ class TodoList(ctk.CTkFrame):
             on_stats_update: 统计更新回调
             on_reminder_click: 提醒按钮点击回调，接收 todo 参数
         """
-        super().__init__(parent, fg_color=COLORS["bg_card"], corner_radius=10, **kwargs)
+        colors = get_colors()
+        super().__init__(parent, fg_color=colors["bg_card"], corner_radius=10, **kwargs)
 
         self._on_stats_update = on_stats_update
         self._on_reminder_click = on_reminder_click
         self._create_widgets()
         self.load_todos()
 
+        # 注册主题变化回调
+        theme_manager.register_callback(self._on_theme_change)
+
     def _create_widgets(self):
         """创建控件"""
+        colors = get_colors()
+
         # 标题和添加按钮
         self.todos_header = ctk.CTkFrame(self, fg_color="transparent")
         self.todos_header.pack(fill="x", padx=15, pady=(10, 5))
@@ -37,7 +43,7 @@ class TodoList(ctk.CTkFrame):
             self.todos_header,
             text="📋 今日待办",
             font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["accent_yellow"]
+            text_color=colors["accent_yellow"]
         )
         self.todos_title.pack(side="left")
 
@@ -47,8 +53,8 @@ class TodoList(ctk.CTkFrame):
             width=55,
             height=24,
             font=ctk.CTkFont(size=11),
-            fg_color=COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"],
             command=self.show_add_dialog
         )
         self.add_btn.pack(side="right")
@@ -63,6 +69,8 @@ class TodoList(ctk.CTkFrame):
 
     def load_todos(self):
         """加载并显示待办事项"""
+        colors = get_colors()
+
         # 清空现有显示
         for widget in self.todos_scrollable.winfo_children():
             widget.destroy()
@@ -78,7 +86,7 @@ class TodoList(ctk.CTkFrame):
                 self.todos_scrollable,
                 text="暂无待办事项\n点击 [+ 添加] 创建新任务",
                 font=ctk.CTkFont(size=12),
-                text_color=COLORS["text_secondary"]
+                text_color=colors["text_secondary"]
             )
             empty_label.pack(pady=30)
             return
@@ -92,18 +100,19 @@ class TodoList(ctk.CTkFrame):
         Args:
             todo: 待办事项数据
         """
+        colors = get_colors()
         is_completed = todo.get("completed", False)
         has_reminder = bool(todo.get("reminder_time"))
 
         # 完成的待办整条变蓝色
         if is_completed:
-            frame_color = COLORS["accent_blue"]
+            frame_color = colors["accent_blue"]
             text_color = "#ffffff"
             del_btn_hover = "#3d8bff"
         else:
-            frame_color = COLORS["bg_input"]
-            text_color = COLORS["text_primary"]
-            del_btn_hover = COLORS["accent_red"]
+            frame_color = colors["bg_input"]
+            text_color = colors["text_primary"]
+            del_btn_hover = colors["accent_red"]
 
         frame = ctk.CTkFrame(self.todos_scrollable, fg_color=frame_color, corner_radius=8)
         frame.pack(fill="x", pady=3)
@@ -115,8 +124,8 @@ class TodoList(ctk.CTkFrame):
             text="",
             variable=var,
             width=24,
-            fg_color=COLORS["accent_green"] if is_completed else COLORS["accent_blue"],
-            hover_color=COLORS["accent_purple"],
+            fg_color=colors["accent_green"] if is_completed else colors["accent_blue"],
+            hover_color=colors["accent_purple"],
             command=lambda t=todo, v=var: self._toggle_todo(t, v)
         )
         checkbox.pack(side="left", padx=(10, 5), pady=8)
@@ -147,14 +156,14 @@ class TodoList(ctk.CTkFrame):
         # 提醒按钮（未完成的任务才显示）
         if not is_completed:
             reminder_icon = "🔔" if has_reminder else "⏰"
-            reminder_color = COLORS["accent_yellow"] if has_reminder else "transparent"
+            reminder_color = colors["accent_yellow"] if has_reminder else "transparent"
             reminder_btn = ctk.CTkButton(
                 frame,
                 text=reminder_icon,
                 width=25,
                 height=25,
                 fg_color=reminder_color,
-                hover_color=COLORS["accent_yellow"],
+                hover_color=colors["accent_yellow"],
                 text_color=text_color if not has_reminder else "#000000",
                 command=lambda t=todo: self._on_reminder_btn_click(t)
             )
@@ -238,3 +247,31 @@ class TodoList(ctk.CTkFrame):
         data["todos"] = [t for t in data["todos"] if t["id"] != todo["id"]]
         TodoModel.save_todos(data)
         self.load_todos()
+
+    def _on_theme_change(self, theme):
+        """主题变化回调"""
+        self._apply_theme()
+
+    def _apply_theme(self):
+        """应用当前主题颜色"""
+        colors = get_colors()
+
+        # 更新自身背景
+        self.configure(fg_color=colors["bg_card"])
+
+        # 更新标题
+        self.todos_title.configure(text_color=colors["accent_yellow"])
+
+        # 更新添加按钮
+        self.add_btn.configure(
+            fg_color=colors["accent_blue"],
+            hover_color=colors["accent_purple"]
+        )
+
+        # 重新加载待办列表以应用新颜色
+        self.load_todos()
+
+    def destroy(self):
+        """销毁组件时注销回调"""
+        theme_manager.unregister_callback(self._on_theme_change)
+        super().destroy()

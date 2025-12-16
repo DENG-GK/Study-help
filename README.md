@@ -1,4 +1,4 @@
-# 📚 学习助手 v1.1
+# 📚 学习助手 v1.2
 
 > 科技感桌面待办与番茄钟应用
 > 作者：哈雷酱 (￣▽￣)
@@ -14,6 +14,7 @@
 | ⏱ **时长记录** | 记录每日专注学习时长 |
 | 📊 **统计报告** | 今日/周/月统计，饼图+折线图 |
 | 📖 **单词学习** | 艾宾浩斯遗忘曲线复习，支持导入单词表 |
+| 📐 **考研数学** | 每日刷题、错题本、公式速查、知识点进度 |
 | ⏰ **任务提醒** | 为待办设置定时提醒 |
 | 🎨 **主题切换** | 深色/浅色主题一键切换 |
 | 🖥 **科技感界面** | 现代化UI，悬浮窗口 |
@@ -62,13 +63,15 @@ python main_new.py
 │   ├── pomodoro_controller.py   # 番茄钟控制器
 │   ├── focus_controller.py      # 专注计时控制器
 │   ├── word_controller.py       # 单词学习控制器
-│   └── reminder_controller.py   # 提醒控制器
+│   ├── reminder_controller.py   # 提醒控制器
+│   └── math_controller.py       # 数学学习控制器
 ├── models/               # 数据模型层
 │   ├── base.py           # 基础模型
 │   ├── todo.py           # 待办模型
 │   ├── record.py         # 学习记录模型
 │   ├── subject.py        # 科目管理模型
-│   └── word.py           # 单词模型
+│   ├── word.py           # 单词模型
+│   └── math_model.py     # 数学数据模型
 ├── views/                # 视图层
 │   ├── main_window.py    # 主窗口
 │   ├── components/       # UI组件
@@ -76,7 +79,8 @@ python main_new.py
 │   │   ├── stats_card.py     # 统计卡片
 │   │   ├── todo_list.py      # 待办列表
 │   │   ├── pomodoro_card.py  # 番茄钟卡片
-│   │   └── word_card.py      # 单词卡片
+│   │   ├── word_card.py      # 单词卡片
+│   │   └── math_card.py      # 数学学习卡片
 │   └── dialogs/          # 对话框
 │       ├── stats_dialog.py           # 统计对话框
 │       ├── reminder_dialog.py        # 提醒设置对话框
@@ -84,16 +88,24 @@ python main_new.py
 │       ├── subject_dialog.py         # 科目管理对话框
 │       ├── word_settings_dialog.py   # 单词学习设置
 │       ├── word_stats_dialog.py      # 单词学习统计
-│       └── wordbook_dialog.py        # 词库管理对话框
+│       ├── wordbook_dialog.py        # 词库管理对话框
+│       └── math_mistake_dialog.py    # 数学错题导入对话框
 ├── utils/                # 工具模块
-│   └── audio.py          # 音频播放工具
+│   ├── audio.py          # 音频播放工具
+│   └── latex_renderer.py # LaTeX公式渲染工具
 ├── data/                 # 数据文件夹
 │   ├── todos.json        # 待办事项数据
 │   ├── study_records.json# 学习记录数据
 │   ├── subjects.json     # 科目列表数据
 │   ├── words.json        # 单词数据
 │   ├── word_stats.json   # 单词学习统计
-│   └── app_settings.json # 应用设置
+│   ├── app_settings.json # 应用设置
+│   ├── math_questions.json   # 数学题库（65道预置题目）
+│   ├── math_mistakes.json    # 数学错题本
+│   ├── math_progress.json    # 数学知识点进度
+│   ├── math_formulas.json    # 数学公式速查
+│   ├── math_settings.json    # 数学学习设置
+│   └── mistake_images/       # 错题图片存储
 └── venv/                 # 虚拟环境（自动创建）
 ```
 
@@ -127,6 +139,30 @@ python main_new.py
 2. 支持艾宾浩斯遗忘曲线自动复习
 3. 可导入自定义单词表
 
+### 📐 考研数学（v1.2新增）
+
+#### 每日刷题
+1. 点击右侧 **[📐 考研数学]** 切换到数学模块
+2. 预置65道高数/线代/概率题目
+3. 支持难度递进模式
+4. 点击选项提交答案，查看解析
+
+#### 错题本
+1. 做错的题目可点击 **[➕ 错题]** 加入错题本
+2. 点击 **[📷 导入图片]** 可导入自己的错题图片
+3. 支持同时导入错题图片和答案图片
+4. 艾宾浩斯遗忘曲线自动安排复习
+
+#### 公式速查
+1. 切换到 **[📖 公式]** 标签页
+2. 选择分类：极限、导数、积分、线代、概率等
+3. 公式显示为可读的 Unicode 格式
+
+#### 知识点进度
+1. 切换到 **[📊 进度]** 标签页
+2. 查看各章节做题数量和正确率
+3. 总体统计一目了然
+
 ### 统计报告
 1. 点击 **[📊 查看详细统计]**
 2. 切换 **今日/本周/本月** 查看不同维度
@@ -135,6 +171,7 @@ python main_new.py
 ### 主题切换
 1. 点击右上角 **[🌙]** 或 **[☀️]** 按钮
 2. 一键切换深色/浅色主题
+3. 所有组件自动适配主题颜色
 
 ---
 
@@ -152,6 +189,11 @@ python main_new.py
 - `study_records.json` - 学习记录（按日期）
 - `words.json` - 单词数据
 - `app_settings.json` - 应用设置（主题等）
+- `math_questions.json` - 数学题库
+- `math_mistakes.json` - 错题本数据
+- `math_progress.json` - 知识点进度
+- `math_formulas.json` - 公式速查数据
+- `mistake_images/` - 错题图片文件
 
 数据格式为JSON，可以手动编辑或备份。
 
@@ -176,9 +218,22 @@ A: 尝试更新 customtkinter: `pip install --upgrade customtkinter`
 **Q: 数据丢失了？**
 A: 检查 `data/` 文件夹，数据以JSON格式保存
 
+**Q: 数学公式显示乱码？**
+A: 公式已转换为 Unicode 格式显示，如 `lim(x→0) (sin x)/(x) = 1`
+
 ---
 
 ## 🎯 更新日志
+
+### v1.2 (2025-12)
+- ✅ **新增考研数学模块**
+  - 📝 每日刷题（65道预置题目，难度递进）
+  - 📕 错题本（支持图片导入，错题+答案图片匹配）
+  - 📖 公式速查（LaTeX 转 Unicode 可读格式）
+  - 📊 知识点进度统计
+- ✅ 优化主题切换，所有组件完美适配
+- ✅ 修复下拉菜单文字不清晰问题
+- ✅ 全面增大字体提升可读性
 
 ### v1.1 (2025-12)
 - ✅ 新增任务定时提醒功能

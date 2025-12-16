@@ -7,6 +7,7 @@ from .subject import SubjectModel
 from .todo import TodoModel
 from .record import RecordModel
 from .word import WordModel
+from .math_model import MathModel
 
 # 为了向后兼容，提供 DataManager 别名
 class DataManager:
@@ -49,7 +50,19 @@ class DataManager:
     add_word_manually = staticmethod(WordModel.add_word_manually)
     import_words_from_file = staticmethod(WordModel.import_words_from_file)
 
+    # 数学模块
+    load_math_questions = staticmethod(MathModel.load_questions)
+    save_math_questions = staticmethod(MathModel.save_questions)
+    load_math_mistakes = staticmethod(MathModel.load_mistakes)
+    save_math_mistakes = staticmethod(MathModel.save_mistakes)
+    load_math_progress = staticmethod(MathModel.load_progress)
+    save_math_progress = staticmethod(MathModel.save_progress)
+    load_math_settings = staticmethod(MathModel.load_settings)
+    save_math_settings = staticmethod(MathModel.save_settings)
+    load_math_formulas = staticmethod(MathModel.load_formulas)
+    get_daily_math_questions = staticmethod(MathModel.get_daily_questions)
+
 __all__ = [
-    'BaseModel', 'SubjectModel', 'TodoModel', 'RecordModel', 'WordModel',
+    'BaseModel', 'SubjectModel', 'TodoModel', 'RecordModel', 'WordModel', 'MathModel',
     'DataManager'
 ]
